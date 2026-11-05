@@ -59,7 +59,7 @@ Kho Public chỉ chứa code của app, KHÔNG chứa dữ liệu người tham 
 
 ## Bước 4 – Khi sửa app
 1. Thay file mới trên GitHub (Add file → Upload files, ghi đè).
-2. Mở sw.js, đổi `voser-v6` thành `voser-v7` (v8, …) để các máy nhận bản mới.
+2. Mở sw.js, đổi `voser-v7` thành `voser-v8` (v9, …) để các máy nhận bản mới.
 3. Trên máy: mở app khi có mạng, đóng hẳn rồi mở lại.
 
 ## Thử trên máy tính trước khi đưa lên mạng

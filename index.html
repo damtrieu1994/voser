@@ -346,6 +346,9 @@ main .foot[hidden]{display:none!important}
 .rescard .rv{text-align:right}
 .rescard .rv b{display:block;font-size:34px;line-height:1}
 .rescard .rv span{font-size:14px;color:var(--muted);font-family:var(--f-mono)}
+@media (min-width:900px){section[data-panel="ai"]:not([hidden]){display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:0 20px;align-items:start}
+section[data-panel="ai"]>h1,section[data-panel="ai"]>p.lead,section[data-panel="ai"]>.resmount,section[data-panel="ai"]>.lockbar{grid-column:1/-1}
+section[data-panel="ai"]>#aiViewer{margin-bottom:0!important}}
 </style>
 </head>
 <body>
