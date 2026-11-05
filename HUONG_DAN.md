@@ -33,6 +33,15 @@ Kho Public chỉ chứa code của app, KHÔNG chứa dữ liệu người tham 
 - Đổi vai trò bằng nút 👤 ở góc trên. Mỗi máy nhớ vai trò đã chọn.
 - Bước "So sánh" đã bỏ khỏi app: so sánh cDMFT – vDMFT – pDMFT làm khi phân tích, từ file Excel xuất ra.
 
+## Ảnh hồ sơ giấy, ảnh dùng chung, kết quả từng mục
+- **Ảnh hồ sơ giấy** (bước Nhập ảnh, khung đầu tiên): chụp phần đầu phiếu giấy có mã nghiên cứu để đối chiếu.
+  Che họ tên nếu có. Ảnh này chỉ người khám và quản lý thấy; không hiện cho người đọc ảnh, không đưa vào file ảnh cho AI;
+  có trong bản Sao lưu.
+- **Ảnh dùng chung**: 5 ảnh trong miệng chỉ cần tải một lần ở bước Nhập ảnh; bước Đọc ảnh (vDMFT) và bước pDMFT
+  tự hiện cùng bộ ảnh đó.
+- **Khung Kết quả** ở đầu mỗi bước: Khám → cDMFT; Đọc ảnh → vDMFT của chính người đọc (trọng tài thấy vDMFT đồng thuận
+  sau khi hai người đọc khóa); pDMFT → tổng D + M + F. Mỗi bước chỉ hiện kết quả của chính bước đó để giữ che mù.
+
 ## Đổi ngôn ngữ
 - Nút **Tiếng Việt / English** ở góc trên bên phải. App nhớ lựa chọn: lần sau mở app sẽ vào đúng ngôn ngữ đã chọn.
 - Hai ngôn ngữ dùng chung một bộ dữ liệu trong máy: hồ sơ nhập bằng giao diện nào cũng thấy ở giao diện kia.
@@ -50,7 +59,7 @@ Kho Public chỉ chứa code của app, KHÔNG chứa dữ liệu người tham 
 
 ## Bước 4 – Khi sửa app
 1. Thay file mới trên GitHub (Add file → Upload files, ghi đè).
-2. Mở sw.js, đổi `voser-v4` thành `voser-v5` (v6, …) để các máy nhận bản mới.
+2. Mở sw.js, đổi `voser-v5` thành `voser-v6` (v7, …) để các máy nhận bản mới.
 3. Trên máy: mở app khi có mạng, đóng hẳn rồi mở lại.
 
 ## Thử trên máy tính trước khi đưa lên mạng

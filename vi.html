@@ -329,6 +329,23 @@ main .foot[hidden]{display:none!important}
 .aitot{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:12px;background:var(--accent-soft);padding:8px;min-height:72px}
 .aitot b{font-size:30px;line-height:1}.aitot span{font-size:13px;color:var(--accent);font-weight:600}
 @media (max-width:600px){.aigrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.paperbox{margin-bottom:14px}
+.paperrow{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+.paperthumb{width:180px;min-height:120px;border-radius:10px;background:var(--sunken);display:grid;place-items:center;overflow:hidden;flex:none}
+.paperthumb span{color:var(--muted);font-size:14px;padding:10px;text-align:center}
+.paperthumb img{width:100%;height:auto;display:block;cursor:zoom-in}
+.paperthumb img.big{position:fixed;inset:5vh 5vw;width:90vw;height:90vh;object-fit:contain;background:#000d;z-index:99;cursor:zoom-out}
+.papertxt{flex:1;min-width:220px}
+.resmount{margin:0 0 16px}
+.rescard{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 18px;border-radius:14px;background:var(--accent-soft);border:2px solid transparent}
+.rescard.lk{border-color:var(--accent)}
+.rescard.empty{background:var(--sunken)}
+.rescard .rl{display:block;font-weight:700;font-size:16px}
+.rescard .rs{display:block;font-size:13px;color:var(--muted)}
+.rescard .rw{color:var(--muted);font-size:15px}
+.rescard .rv{text-align:right}
+.rescard .rv b{display:block;font-size:34px;line-height:1}
+.rescard .rv span{font-size:14px;color:var(--muted);font-family:var(--f-mono)}
 </style>
 </head>
 <body>
@@ -1406,6 +1423,7 @@ const TX=VI?{h:"pDMFT · kết quả AI",lead:"Mô hình không chạy trong app
   lab:"pDMFT result",bad:"Each box must be a whole number 0–28 and D + M + F at most 28.",need:"Enter D, M and F.",ok:"Complete, ready to lock.",noMsg:"Recorded as no AI result.",verNeed:" Record the model version."};
 const sec=document.querySelector('section[data-panel="ai"]');
 sec.innerHTML=`<h1>${TX.h}</h1><p class="lead keep">${TX.lead}</p>
+<div id="aiViewer" style="margin-bottom:14px"></div>
 <div class="panel aisimple">
  <div class="aigrid">${["D","M","F"].map(k=>`<div class="fld"><label for="ais_${k}">${TX[k]}</label><input id="ais_${k}" data-aisum="${k}" type="number" inputmode="numeric" min="0" max="28" step="1"></div>`).join("")}
   <div class="aitot"><b id="aiTot">–</b><span>${TX.tot}</span></div></div>
@@ -1420,7 +1438,7 @@ function sumOf(a){const s=a?.sum||{};const v=["D","M","F"].map(k=>num(s[k]));
   return{ok:true,D:v[0],M:v[1],F:v[2],T:v[0]+v[1]+v[2]};}
 window.aiIdx=function(r){const s=sumOf(r.ai);if(s.ok)return{D:s.D,M:s.M,F:s.F,T:s.T,n9:""};return idxP(r.ai?.c);};
 window.aiHas=function(r){const s=r.ai?.sum||{};return["D","M","F"].some(k=>s[k]!==""&&s[k]!=null);};
-function paint(){const a=cur.ai;a.sum=a.sum||{};const lk=!!a.lock;
+function paint(){const a=cur.ai;a.sum=a.sum||{};const lk=!!a.lock;try{$("#aiViewer").innerHTML=viewerHTML("ai");}catch(_){}
   document.querySelectorAll("[data-aisum]").forEach(el=>{if(document.activeElement!==el)el.value=a.sum[el.dataset.aisum]??"";el.disabled=lk||!!a.noOutput;});
   document.querySelectorAll('section[data-panel="ai"] [data-ai]').forEach(el=>{if(el.type==="checkbox")el.checked=!!a[el.dataset.ai];else if(document.activeElement!==el)el.value=a[el.dataset.ai]??"";el.disabled=lk;});
   const s=sumOf(a);$("#aiTot").textContent=a.noOutput?"–":s.ok?s.T:"–";
@@ -1430,6 +1448,58 @@ window.renderAi=paint;
 document.addEventListener("input",e=>{const el=e.target;if(el.dataset?.ai&&el.closest?.('section[data-panel="ai"]')&&cur)setTimeout(paint);});
 document.addEventListener("input",e=>{const el=e.target;if(!el.dataset?.aisum||!cur||cur.ai.lock)return;cur.ai.sum=cur.ai.sum||{};
   cur.ai.sum[el.dataset.aisum]=el.value;touchSoft("ai");paint();});
+})();
+
+/* ===== Paper-record photo + per-section DMFT result cards ===== */
+(function(){
+const VI=document.documentElement.lang==="vi";
+const TX=VI?{ph:"Ảnh hồ sơ giấy",phL:"Chụp phần đầu phiếu giấy có mã nghiên cứu để đối chiếu, tránh nhầm phiếu giấy với phiếu trong app. Che họ tên nếu phiếu có ghi tên. Ảnh này không hiện cho người đọc ảnh và không đưa vào file ảnh cho AI.",
+  take:"Chụp / chọn ảnh",re:"Chụp lại",del:"Xoá",none:"Chưa có ảnh hồ sơ",at:"Chụp lúc",
+  res:"Kết quả",draft:"đang nhập",locked:"đã khóa",wait:"Chưa có đủ dữ liệu",
+  cd:"cDMFT · khám lâm sàng",vd:"vDMFT · đồng thuận",r1:"Người đọc 1",r2:"Người đọc 2",pd:"pDMFT · AI",arbWait:"Chờ hai người đọc khóa"}
+:{ph:"Paper record photo",phL:"Photograph the top of the paper form showing the study ID, so the paper form and the app record can be matched. Cover the name if the form has one. This photo is not shown to photo readers and is not included in the photo file for AI.",
+  take:"Take / choose photo",re:"Retake",del:"Delete",none:"No record photo yet",at:"Taken",
+  res:"Result",draft:"in progress",locked:"locked",wait:"Not enough data yet",
+  cd:"cDMFT · clinical exam",vd:"vDMFT · consensus",r1:"Reader 1",r2:"Reader 2",pd:"pDMFT · AI",arbWait:"Waiting for both readers to lock"};
+
+/* ---- 1. paper record photo (stored as a compressed data URL in the photo part) ---- */
+const anh=document.querySelector('section[data-panel="anh"]');
+anh.querySelector("#photoSummary").insertAdjacentHTML("beforebegin",`<div class="panel paperbox" id="paperBox"></div>
+<input type="file" id="paperFile" accept="image/*" capture="environment" hidden>`);
+function shrink(file){return new Promise((ok,no)=>{const u=URL.createObjectURL(file),im=new Image();
+  im.onload=()=>{const m=1600,sc=Math.min(1,m/Math.max(im.width,im.height));const c=document.createElement("canvas");c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);
+    c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);ok(c.toDataURL("image/jpeg",0.82));};
+  im.onerror=e=>{URL.revokeObjectURL(u);no(e);};im.src=u;});}
+function paintPaper(){const p=cur?.photo?.paper;const lk=!!cur?.photo?.lock;
+  $("#paperBox").innerHTML=`<div class="paperrow"><div class="paperthumb">${p?.dataUrl?`<img src="${p.dataUrl}" alt="${TX.ph}" data-zoomimg="1">`:`<span>${TX.none}</span>`}</div>
+   <div class="papertxt"><h3>${TX.ph}</h3><p class="note" style="display:block">${TX.phL}</p>${p?.at?`<p class="note" style="display:block">${TX.at}: ${esc(when(p.at))}</p>`:""}
+   <div class="row"><button class="btn" type="button" id="paperTake" ${lk?"disabled":""}>📷 ${p?.dataUrl?TX.re:TX.take}</button>${p?.dataUrl?`<button class="btn danger" type="button" id="paperDel" ${lk?"disabled":""}>${TX.del}</button>`:""}</div></div></div>`;}
+document.addEventListener("click",e=>{
+  if(e.target.closest("#paperTake")){$("#paperFile").click();return;}
+  if(e.target.closest("#paperDel")){if(cur.photo.lock)return;delete cur.photo.paper;touch("photo");return;}
+  const z=e.target.closest("[data-zoomimg]");if(z){z.classList.toggle("big");}});
+$("#paperFile").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f||!cur||cur.photo.lock)return;
+  try{cur.photo.paper={dataUrl:await shrink(f),at:nowISO(),name:f.name||""};touch("photo");}catch(_){toast(VI?"Không đọc được ảnh.":"Could not read the photo.");}});
+
+/* ---- 3. result cards ---- */
+function card(id,label,x,state,extra){const el=$("#"+id);if(!el)return;
+  if(!x){el.innerHTML=`<div class="rescard empty"><span class="rl">${TX.res} · ${label}</span><span class="rw">${extra||TX.wait}</span></div>`;return;}
+  el.innerHTML=`<div class="rescard ${state==="lock"?"lk":""}"><div><span class="rl">${TX.res} · ${label}</span><span class="rs">${state==="lock"?"✓ "+TX.locked:TX.draft}</span></div>
+   <div class="rv"><b>${x.T}</b><span>D ${x.D} · M ${x.M} · F ${x.F}</span></div></div>`;}
+function mount(panel,id){const sec=document.querySelector(`section[data-panel="${panel}"]`);const h=sec.querySelector("p.lead")||sec.querySelector("h1");
+  h.insertAdjacentHTML("afterend",`<div id="${id}" class="resmount"></div>`);}
+mount("kham","resKham");mount("doc","resDoc");mount("ai","resAi");
+const any=c=>c&&Object.values(c).some(v=>v!==""&&v!=null);
+function paintRes(){if(!cur)return;
+  if(tab==="kham"){const c=cur.clin;card("resKham",TX.cd,any(c?.c)?idxWHO(c.c,T28,ageOf(cur)):null,c?.lock?"lock":"");}
+  if(tab==="doc"){
+    if(role==="arb"){const both=cur.r1?.lock&&cur.r2?.lock;card("resDoc",TX.vd,both?idxP(consensus(cur)):null,cur.arb?.lock?"lock":"",TX.arbWait);}
+    else{const r=cur[role];card("resDoc",TX[role]==null?"vDMFT":"vDMFT · "+TX[role],any(r?.c)?idxP(r.c):null,r?.lock?"lock":"");}}
+  if(tab==="ai"){const a=cur.ai;const x=a?.noOutput?null:(aiHas(cur)||any(a?.c))?aiIdx(cur):null;
+    const ok=x&&[x.D,x.M,x.F].every(Number.isFinite);card("resAi",TX.pd,ok?x:null,a?.lock?"lock":"");}
+  if(tab==="anh")paintPaper();}
+const _ra=window.renderAll;window.renderAll=function(){_ra();try{paintRes();}catch(err){console.warn(err);}};
+const _ts=window.touchSoft;window.touchSoft=function(p){_ts(p);try{paintRes();}catch(_){}};
 })();
 
 /* ===== Simple mode: roles, fewer steps, bigger UI ===== */
