@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>VOSER–pDMFT</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1B2A4A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="VOSER">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<script>/* language memory */(function(){var me="en",p;try{p=localStorage.getItem("voser-lang");}catch(e){}
+if(p&&p!==me&&!sessionStorage.getItem("voser-switching")){location.replace("vi.html"+location.hash);return;}
+try{sessionStorage.removeItem("voser-switching");localStorage.setItem("voser-lang",me);}catch(e){}})();
+function switchLang(){try{localStorage.setItem("voser-lang","vi");sessionStorage.setItem("voser-switching","1");}catch(e){}location.href="vi.html"+location.hash;}</script>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+/* Layout: sticky header with 6-step study stepper; one working column (max 1080px); tooth charts scroll inside their own box. */
+:root{
+  --bg:#f2f5f6; --surface:#ffffff; --sunken:#e8eef0; --fg:#13212a; --muted:#576872; --line:#d3dde1;
+  --accent:#0b6e74; --accent-fg:#ffffff; --accent-soft:#d9eeee;
+  --d:#b04a00; --d-soft:#fde3cf; --f:#005f96; --f-soft:#d8e9f5; --m:#2f3d47; --m-fg:#ffffff; --ab:#7f8e98; --ab-soft:#e4e9ec;
+  --mV:#8a4fa3; --mA:#a86d00; --mC:#13212a;
+  --ok:#1b7a3c; --ok-soft:#dcf1e3; --warn:#8f5600; --warn-soft:#fbefd6; --bad:#b3261e; --bad-soft:#fbe2df;
+  --f-body:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1518; --surface:#162026; --sunken:#1c2930; --fg:#e3ecef; --muted:#97a9b2; --line:#2b3a42;
+  --accent:#4cc3c4; --accent-fg:#04201f; --accent-soft:#16393b;
+  --d:#ff9a5c; --d-soft:#45240f; --f:#6cb6ec; --f-soft:#14304a; --m:#c9d4da; --m-fg:#10181c; --ab:#8796a0; --ab-soft:#26323a;
+  --mV:#d39ae8; --mA:#f0b23d; --mC:#e3ecef;
+  --ok:#6fd48f; --ok-soft:#163524; --warn:#f0b65c; --warn-soft:#3b2c12; --bad:#f2877e; --bad-soft:#401c19; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1518; --surface:#162026; --sunken:#1c2930; --fg:#e3ecef; --muted:#97a9b2; --line:#2b3a42;
+  --accent:#4cc3c4; --accent-fg:#04201f; --accent-soft:#16393b;
+  --d:#ff9a5c; --d-soft:#45240f; --f:#6cb6ec; --f-soft:#14304a; --m:#c9d4da; --m-fg:#10181c; --ab:#8796a0; --ab-soft:#26323a;
+  --mV:#d39ae8; --mA:#f0b23d; --mC:#e3ecef;
+  --ok:#6fd48f; --ok-soft:#163524; --warn:#f0b65c; --warn-soft:#3b2c12; --bad:#f2877e; --bad-soft:#401c19; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar-top{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding-block:10px 8px}
+.brand{font-weight:700;letter-spacing:.01em;display:flex;align-items:baseline;gap:6px}
+.brand small{font-weight:500;color:var(--muted);font-size:12px}
+.idnow{font-family:var(--f-mono);font-weight:700;font-size:16px;padding:3px 10px;border-radius:6px;background:var(--sunken)}
+.idnow.demo{background:var(--warn-soft);color:var(--warn)}
+.sp{flex:1}
+.chip{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--sunken);color:var(--muted);white-space:nowrap}
+.chip.cloud{background:var(--accent-soft);color:var(--accent)}
+.chip.dirty{background:var(--warn-soft);color:var(--warn)}
+.toggle{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.toggle input{accent-color:var(--accent)}
+nav.steps{display:flex;gap:4px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin}
+.step{flex:1 0 auto;display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px;cursor:pointer;text-align:left;min-width:0}
+.step .n{font-family:var(--f-mono);font-size:12px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--sunken);color:var(--muted);flex:none}
+.step .t{display:flex;flex-direction:column;line-height:1.2}
+.step .t b{font-size:13px;font-weight:600;white-space:nowrap}
+.step .t span{font-size:11px;color:var(--muted);white-space:nowrap}
+.step[aria-current="page"]{border-color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent)}
+.step[aria-current="page"] .n{background:var(--accent);color:var(--accent-fg)}
+.step.st-lock .n{background:var(--ok);color:#fff}
+.step.st-part .n{background:var(--warn-soft);color:var(--warn)}
+.step.list{flex:0 0 auto;margin-left:6px}
+.step.list+.step.list{margin-left:0}
+.guide{display:flex;flex-direction:column;gap:14px;max-width:860px}
+.gcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:4px 18px 14px}
+.gcard h2{margin:14px 0 8px}
+.gl{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px}
+.gstep{display:grid;grid-template-columns:44px minmax(0,1fr);gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.gn{width:40px;height:40px;border-radius:50%;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font-family:var(--f-mono);font-weight:700;font-size:18px}
+.gb h3{font-size:16px;margin:6px 0 8px;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.who{font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft);padding:2px 9px;border-radius:99px}
+.gb ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.gdone{margin:10px 0 0;font-size:13px;color:var(--ok);font-weight:500}
+@media (max-width:520px){.gstep{grid-template-columns:minmax(0,1fr)}.gn{width:32px;height:32px;font-size:15px}}
+main{padding-block:20px 90px}
+h1{font-size:23px;margin:0 0 2px;text-wrap:balance;letter-spacing:-.01em}
+.lead{color:var(--muted);margin:0 0 18px;max-width:70ch}
+h2{font-size:16px;margin:24px 0 10px;text-wrap:balance}
+h3{font-size:14px;margin:0 0 6px}
+.note{font-size:13px;color:var(--muted);margin:4px 0 10px;max-width:80ch}
+.banner{display:flex;gap:10px;align-items:flex-start;font-size:14px;padding:10px 14px;border-radius:var(--r);margin:0 0 14px}
+.banner.warn{background:var(--warn-soft);color:var(--warn)}
+.banner.info{background:var(--accent-soft);color:var(--accent)}
+.banner.bad{background:var(--bad-soft);color:var(--bad)}
+.banner.ok{background:var(--ok-soft);color:var(--ok)}
+.banner b{font-weight:600}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px 16px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.split{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:16px;align-items:start}
+@media (max-width:860px){.two,.split{grid-template-columns:minmax(0,1fr)}}
+.fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+.fld>label{font-size:13px;color:var(--muted)}
+input[type=text],input[type=number],input[type=date],select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+textarea{min-height:88px;font-family:var(--f-mono);font-size:13px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.checks{display:flex;flex-direction:column;gap:6px}
+.ck{display:flex;gap:8px;align-items:flex-start;font-size:14px;cursor:pointer}
+.ck input{margin-top:3px;accent-color:var(--accent)}
+.btn{border:1px solid var(--line);background:var(--surface);padding:7px 12px;border-radius:6px;cursor:pointer;font-weight:500;font-size:14px;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.pri{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn.danger{color:var(--bad)}
+.btn.lock{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.mono{font-family:var(--f-mono)}
+.idcode{font-family:var(--f-mono);font-size:30px;font-weight:700;letter-spacing:.04em}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.mute{background:var(--sunken);color:var(--muted)}
+.lockbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:12px 14px;border:1px dashed var(--line);border-radius:var(--r);margin-top:14px;background:var(--surface)}
+.lockbar .msg{font-size:13px;color:var(--muted)}
+
+/* ---- tooth chart ---- */
+.chartbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 12px 10px}
+.chart-scroll{overflow-x:auto;padding-bottom:4px}
+.arch{display:grid;grid-template-columns:repeat(var(--nc,8),var(--tw,40px)) 10px repeat(var(--nc,8),var(--tw,40px));gap:4px;width:max-content;margin:0 auto}
+.split .arch{--tw:32px;gap:3px}
+.split .tooth{height:46px}
+.split .surfmode .tooth{height:62px}
+.split .tooth .tc{font-size:16px}
+.arch .mid{grid-row:span 1}
+.jawlab{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;width:min(100%,712px);margin:0 auto 4px}
+.archsep{height:1px;background:var(--line);margin:8px auto;width:min(100%,712px)}
+.tooth{height:50px;border-radius:7px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;line-height:1.1;position:relative}
+.tooth .tn{font-family:var(--f-mono);font-size:10px;color:var(--muted)}
+.tooth .tc{font-family:var(--f-mono);font-size:18px;font-weight:700}
+.tooth.blank{border-style:dashed;background:transparent}
+.tooth.blank .tc{color:var(--line)}
+.tooth.k-S{background:var(--surface)}
+.tooth.k-D{background:var(--d-soft);border-color:var(--d);color:var(--d)}
+.tooth.k-F{background:var(--f-soft);border-color:var(--f);color:var(--f)}
+.tooth.k-M{background:var(--m);border-color:var(--m);color:var(--m-fg)}
+.tooth.k-M .tn{color:var(--m-fg);opacity:.75}
+.tooth.k-A{background:repeating-linear-gradient(135deg,var(--ab-soft) 0 5px,transparent 5px 10px);border-color:var(--ab);color:var(--ab)}
+.tooth.k-X{border-style:dotted;color:var(--muted);background:var(--sunken)}
+.tooth.k-W{opacity:.75}
+.tooth.sel{outline:3px solid var(--accent);outline-offset:1px;z-index:1}
+.tooth.ghost{opacity:.35;cursor:default}
+.tooth.dis{cursor:default}
+.tooth .flag{position:absolute;top:2px;right:3px;font-size:9px;font-weight:700;color:var(--warn)}
+.tooth.ring{box-shadow:0 0 0 2px var(--bad);border-color:var(--bad)}
+.palette{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.surfmode .tooth{height:64px;justify-content:flex-start;padding-top:4px;gap:1px}
+.surfmode .tooth .tc{font-size:15px}
+.mini{display:block}
+.modeseg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.modeseg button{border:0;background:none;padding:6px 14px;font-size:13px;font-weight:500;cursor:pointer;color:var(--muted)}
+.modeseg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+.sed{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:start;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+@media (max-width:640px){.sed{grid-template-columns:minmax(0,1fr)}}
+.sx{display:grid;grid-template-columns:repeat(3,62px);grid-template-rows:repeat(3,52px);gap:4px}
+.sx .sb{border:1.5px solid var(--line);border-radius:7px;background:var(--surface);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:var(--muted);line-height:1.15;padding:0}
+.sx .sb b{font-family:var(--f-mono);font-size:17px;color:var(--fg)}
+.sx .sb.k-D{background:var(--d-soft);border-color:var(--d)} .sx .sb.k-D b{color:var(--d)}
+.sx .sb.k-F{background:var(--f-soft);border-color:var(--f)} .sx .sb.k-F b{color:var(--f)}
+.sx .sb.k-SL{background:var(--ok-soft);border-color:var(--ok)}
+.sx .sb.on{outline:3px solid var(--accent);outline-offset:1px}
+.sx .sb.blank{border-style:dashed}
+.sx .ctr{grid-column:2;grid-row:2}
+.sx .t1{grid-column:2;grid-row:1}.sx .b1{grid-column:2;grid-row:3}.sx .l1{grid-column:1;grid-row:2}.sx .r1{grid-column:3;grid-row:2}
+.sx .lab{grid-column:1;grid-row:1;font-family:var(--f-mono);font-weight:700;font-size:20px;display:grid;place-items:center;color:var(--accent)}
+.sedp h4{margin:0 0 6px;font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.sedp .palette{margin-top:0;margin-bottom:10px}
+.pc{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);border-radius:7px;padding:5px 10px 5px 6px;background:var(--surface);cursor:pointer;font-size:13px;min-width:0}
+.pc .k{font-family:var(--f-mono);font-weight:700;font-size:15px;width:26px;height:26px;display:grid;place-items:center;border-radius:5px;border:1.5px solid var(--line);flex:none}
+.pc.k-D .k{background:var(--d-soft);border-color:var(--d);color:var(--d)}
+.pc.k-F .k{background:var(--f-soft);border-color:var(--f);color:var(--f)}
+.pc.k-M .k{background:var(--m);border-color:var(--m);color:var(--m-fg)}
+.pc.k-A .k{background:repeating-linear-gradient(135deg,var(--ab-soft) 0 4px,transparent 4px 8px);border-color:var(--ab);color:var(--ab)}
+.pc.k-X .k{border-style:dotted;background:var(--sunken);color:var(--muted)}
+.pc:disabled{opacity:.45;cursor:not-allowed}
+.chart-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-top:10px;font-size:13px;color:var(--muted)}
+.kbd{font-family:var(--f-mono);font-size:11px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--surface)}
+.dmft{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
+.dm{border:1px solid var(--line);border-radius:8px;padding:6px 12px;min-width:64px;text-align:center;background:var(--surface)}
+.dm b{display:block;font-family:var(--f-mono);font-size:22px;font-variant-numeric:tabular-nums;line-height:1.2}
+.dm span{font-size:11px;color:var(--muted);letter-spacing:.05em}
+.dm.tot{border-color:var(--accent);background:var(--accent-soft)}
+.dm.tot b{color:var(--accent)}
+
+/* ---- photos ---- */
+.photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.slot{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.slot-h{padding:9px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.slot-h b{font-size:14px} .slot-h .mono{font-size:12px;color:var(--muted)}
+.drop{aspect-ratio:4/3;max-width:100%;background:var(--sunken);display:grid;place-items:center;position:relative;cursor:pointer;border-block:1px dashed var(--line)}
+.drop img{width:100%;height:100%;object-fit:contain;background:#000}
+.drop .ph{color:var(--muted);font-size:13px;text-align:center;padding:12px}
+.drop.over{outline:2px dashed var(--accent);outline-offset:-6px}
+.q4{display:grid;grid-template-columns:1fr auto;gap:4px 8px;padding:10px 12px;font-size:13px;align-items:center}
+.q4 select{width:auto;padding:3px 6px;font-size:13px}
+.slot-f{padding:8px 12px 12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
+.slot-f .meta{flex:1 1 100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.viewer{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;position:sticky;top:132px}
+.viewer .vimg{aspect-ratio:4/3;background:#0b0f12;display:grid;place-items:center;overflow:hidden;cursor:zoom-in;max-width:100%}
+.viewer .vimg img{width:100%;height:100%;object-fit:contain;transition:transform .15s}
+.viewer .vimg.zoom img{transform:scale(2.2);cursor:zoom-out}
+.viewer .vtabs{display:flex;gap:4px;padding:8px;flex-wrap:wrap}
+.viewer .vtabs button{font-size:12px}
+.viewer .vtabs button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.viewer .empty{color:#9fb0b8;font-size:13px;padding:20px;text-align:center}
+@media (max-width:860px){.viewer{position:static}}
+
+/* ---- compare ---- */
+.cards3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.cards3{grid-template-columns:minmax(0,1fr)}}
+.mcard{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:14px;border-top:4px solid var(--c)}
+.mcard .lab{font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.mcard .big{font-family:var(--f-mono);font-size:40px;font-weight:700;line-height:1.1;color:var(--c);font-variant-numeric:tabular-nums}
+.mcard .parts{font-family:var(--f-mono);font-size:13px;color:var(--muted)}
+.mcard .delta{margin-top:8px;font-size:13px}
+.delta b{font-family:var(--f-mono)}
+.cmp-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:10px}
+table.cmp{border-collapse:separate;border-spacing:3px;margin:0 auto}
+table.cmp th{font-family:var(--f-mono);font-size:10px;color:var(--muted);font-weight:500}
+table.cmp th.rl{font-family:var(--f-body);font-size:12px;text-align:right;padding-right:6px;white-space:nowrap}
+table.cmp td{width:30px;height:30px;padding:0;text-align:center;font-family:var(--f-mono);font-weight:700;font-size:13px;border-radius:5px;border:1.5px solid var(--line);position:relative}
+table.cmp td.k-D{background:var(--d-soft);border-color:var(--d);color:var(--d)}
+table.cmp td.k-F{background:var(--f-soft);border-color:var(--f);color:var(--f)}
+table.cmp td.k-M{background:var(--m);border-color:var(--m);color:var(--m-fg)}
+table.cmp td.k-A{background:repeating-linear-gradient(135deg,var(--ab-soft) 0 4px,transparent 4px 8px);border-color:var(--ab);color:var(--ab)}
+table.cmp td.k-X{border-style:dotted;background:var(--sunken);color:var(--muted)}
+table.cmp td.mis{box-shadow:0 0 0 2px var(--bad)}
+table.cmp td.gap{border:0;width:8px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-3px;margin-right:5px;border:1.5px solid var(--line)}
+.legend i.k-D{background:var(--d-soft);border-color:var(--d)} .legend i.k-F{background:var(--f-soft);border-color:var(--f)} .legend i.k-M{background:var(--m);border-color:var(--m)}
+.legend i.k-A{background:repeating-linear-gradient(135deg,var(--ab-soft) 0 3px,transparent 3px 6px);border-color:var(--ab)} .legend i.k-X{border-style:dotted;background:var(--sunken)} .legend i.mis{box-shadow:0 0 0 2px var(--bad)}
+.stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.st{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface)}
+.st .v{font-family:var(--f-mono);font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.st .l{font-size:12px;color:var(--muted)}
+table.tb{border-collapse:collapse;width:100%;font-size:14px}
+table.tb th,table.tb td{padding:7px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+table.tb th{font-size:12px;color:var(--muted);font-weight:600;background:var(--sunken)}
+table.tb td.num{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.tbwrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.hyp{display:grid;gap:10px}
+.hy{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 14px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface)}
+.hy .t{font-size:14px} .hy .t small{display:block;color:var(--muted);font-size:12px}
+.ci{grid-column:1/-1}
+.ci svg{width:100%;height:44px;display:block}
+.svgbox{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:8px}
+.svgbox svg{width:100%;height:auto;display:block}
+
+/* ---- list ---- */
+tr.cur td{background:var(--accent-soft)}
+.dots{display:flex;gap:3px}
+.dots i{width:10px;height:10px;border-radius:50%;background:var(--line);display:inline-block}
+.dots i.l{background:var(--ok)} .dots i.p{background:var(--warn)}
+.export{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:20px}
+.exp{border:1px solid var(--line);border-radius:var(--r);padding:14px;background:var(--surface);display:flex;flex-direction:column;gap:8px}
+.exp h3{margin:0} .exp p{margin:0;font-size:13px;color:var(--muted);flex:1}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.foot{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;margin-top:26px;padding-top:16px;border-top:1px solid var(--line)}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:14px;z-index:50;max-width:calc(100% - 32px)}
+.modal{position:fixed;inset:0;background:rgb(0 0 0 / .45);display:grid;place-items:center;z-index:60;padding:16px}
+.modal-c{background:var(--surface);border-radius:12px;padding:18px;max-width:440px;width:100%}
+.modal-c p{margin:0 0 12px}
+.busy{position:fixed;inset:0;background:rgb(0 0 0 / .35);display:grid;place-items:center;z-index:70;color:#fff;font-weight:600}
+.codes-ref{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 18px;font-size:13px}
+.codes-ref div{display:flex;gap:8px} .codes-ref b{font-family:var(--f-mono);width:16px;flex:none}
+details.ref summary{cursor:pointer;color:var(--accent);font-size:13px;font-weight:500}
+.edm{position:fixed;inset:0;background:rgb(0 0 0 / .6);z-index:65;display:grid;place-items:center;padding:max(12px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.edc{background:var(--surface);border-radius:12px;width:min(1100px,100%);max-height:100%;overflow:auto;display:grid;grid-template-columns:minmax(0,1fr) 300px}
+@media (max-width:820px){.edc{grid-template-columns:minmax(0,1fr)}}
+.edv{background:#0b0f12;display:grid;place-items:center;min-height:300px;padding:10px;position:relative}
+.edv canvas{max-width:100%;max-height:72vh;display:block;touch-action:none}
+.edv canvas.crop{cursor:crosshair}
+.edp{padding:16px;display:flex;flex-direction:column;gap:12px;border-left:1px solid var(--line)}
+.edp h3{margin:0}
+.edg{display:flex;flex-direction:column;gap:6px}
+.edg>b{font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;font-weight:600}
+.sl{display:grid;grid-template-columns:96px minmax(0,1fr) 38px;gap:8px;align-items:center;font-size:13px}
+.sl input[type=range]{width:100%;accent-color:var(--accent)}
+.sl output{font-family:var(--f-mono);font-size:12px;text-align:right}
+.edited-tag{position:absolute;top:6px;left:6px;font-size:11px;font-weight:600;background:var(--accent);color:var(--accent-fg);padding:2px 7px;border-radius:99px}
+.drop,.vimg{position:relative}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:520px){h1{font-size:20px} .brand small{display:none}}
+</style>
+</head>
+<body>
+<header class="bar">
+ <div class="wrap">
+  <div class="bar-top">
+   <span class="brand">VOSER–pDMFT <small>Validation study record</small></span>
+   <span class="idnow" id="idNow">—</span>
+   <span class="chip dirty" id="dirtyChip" hidden>Unsaved</span>
+   <span class="sp"></span>
+   <label class="toggle" title="Hide the other methods' results while entering data, following the protocol's blinding procedure"><input type="checkbox" id="blind" checked> Blinding</label>
+   <span class="chip" id="modeChip">Connecting…</span><button type="button" class="btn" style="margin-left:8px;padding:4px 10px" onclick="switchLang()" title="Language / Ngôn ngữ">Tiếng Việt</button>
+   <button class="btn" id="btnNewTop" type="button">+ New record</button>
+   <button class="btn pri" id="btnSave" type="button">Save</button>
+  </div>
+  <nav class="steps" id="steps" aria-label="Study steps"></nav>
+ </div>
+</header>
+
+<main class="wrap">
+ <div id="topBanner"></div>
+
+ <!-- 1. ID -->
+ <section data-panel="ma">
+  <h1>Study ID and screening</h1>
+  <p class="lead">Each participant carries only a study ID; the record stores no name. The ID is the site plus a sequence number, e.g. <span class="mono">S1-0123</span>.</p>
+  <div class="two">
+   <div class="panel">
+    <h3>Study ID</h3>
+    <div class="grid" style="margin-top:8px">
+     <div class="fld"><label for="m_site">Site</label><select id="m_site" data-m="site"><option value="">--</option><option value="S1">S1 · Site 1</option><option value="S2">S2 · Site 2</option><option value="S3">S3 · Site 3</option></select></div>
+     <div class="fld"><label for="m_stt">Sequence number</label><input type="number" id="m_stt" data-m="stt" min="1" max="9999" inputmode="numeric"></div>
+    </div>
+    <div class="row" style="margin-top:14px;justify-content:space-between">
+     <div><div class="idcode" id="idCode">—</div><div class="note" id="idMsg" style="margin:0"></div></div>
+     <button class="btn" id="btnNextStt" type="button">Next number</button>
+    </div>
+    <h3 style="margin-top:18px">General information</h3>
+    <div class="grid" style="margin-top:8px">
+     <div class="fld"><label for="m_ngay">Exam date</label><input type="date" id="m_ngay" data-m="ngay"></div>
+     <div class="fld"><label for="m_tuoi">Age (completed years, from date of birth)</label><input type="number" id="m_tuoi" data-m="tuoi" min="10" max="99"></div>
+     <div class="fld"><label for="m_gioi">Sex</label><select id="m_gioi" data-m="gioi"><option value="">--</option><option value="1">1 · Male</option><option value="2">2 · Female</option></select></div>
+     <div class="fld"><label for="m_nhom">Group</label><select id="m_nhom" data-m="nhom"><option value="">--</option><option value="SV">Student</option><option value="KSV">Non-student</option></select></div>
+     <div class="fld"><label for="m_kham">Examiner ID</label><input type="text" id="m_kham" data-m="examiner" placeholder="e.g. E1"></div>
+     <div class="fld"><label for="m_chup">Photographer ID</label><input type="text" id="m_chup" data-m="photographer" placeholder="e.g. P2"></div>
+     <div class="fld"><label for="m_tb">Camera/device ID</label><input type="text" id="m_tb" data-m="device" placeholder="e.g. D2"></div>
+    </div>
+   </div>
+   <div class="panel">
+    <h3>Inclusion criteria</h3>
+    <div class="checks" id="inclBox"></div>
+    <h3 style="margin-top:16px">Exclusion criteria</h3>
+    <div class="checks" id="exclBox"></div>
+    <div style="margin-top:14px" id="eligOut"></div>
+   </div>
+  </div>
+ </section>
+
+ <!-- 2. CLINICAL EXAM -->
+ <section data-panel="kham" hidden>
+  <h1>Clinical exam · cDMFT (reference standard)</h1>
+  <p class="lead">WHO 2013 examination, crown codes 0–9 for all 32 positions. The primary index cDMFT uses 28 teeth (no third molars), following the pDMFT convention; third molars are used only for cDMFT32. Lock the exam before photography.</p>
+  <div id="khamChart"></div>
+  <div class="dmft" id="khamDmft" style="margin-top:12px"></div>
+  <details class="ref" style="margin-top:12px"><summary>WHO 2013 codes and scoring rules</summary><div class="codes-ref" id="refWHO" style="margin-top:8px"></div>
+   <p class="note">D = codes 1, 2 · F = code 3 · M = code 4 (under 30 years; from 30 years code 5 is added). Codes 6, 7, 8, 9 are not counted in DMFT. U flag: reason for tooth loss unknown (record code 5 with U; sensitivity analysis recodes U as 4).</p></details>
+  <div class="lockbar" id="khamLock"></div>
+ </section>
+
+ <!-- 3. PHOTOS -->
+ <section data-panel="anh" hidden>
+  <h1>Intraoral photographs · 5 views</h1>
+  <p class="lead">The photographer is not the examiner. Rate each view on 4 criteria (0 unusable · 1 usable with limitations · 2 good). A view meets the minimum when no criterion is 0; at most 2 retakes per view. Do not use AI output to decide on retakes.</p>
+  <div id="photoSummary" style="margin-bottom:12px"></div>
+  <div class="photos" id="photos"></div>
+  <div class="lockbar" id="anhLock"></div>
+ </section>
+
+ <!-- 4. AI -->
+ <section data-panel="ai" hidden>
+  <h1>AI diagnosis · pDMFT-AI</h1>
+  <p class="lead">Record the output of pDMFT-AI run on the final photo set with the locked model version. This page does not run the model: paste or load a per-tooth result file, or enter it by hand. pDMFT coding: absent teeth merge WHO 4, 5, 8 into code 4.</p>
+  <div class="split">
+   <div id="aiViewer"></div>
+   <div>
+    <div class="panel">
+     <h3>Load results</h3>
+     <p class="note" style="margin-top:0">JSON <span class="mono">{"11":"0","16":"1",…}</span>, or CSV with one line per <span class="mono">tooth,code</span>.</p>
+     <textarea id="aiPaste" placeholder="16,1&#10;26,3&#10;36,4"></textarea>
+     <div class="row" style="margin-top:8px"><button class="btn" id="btnAiParse" type="button">Apply</button><button class="btn" id="btnAiFile" type="button">Load .json/.csv file</button><input type="file" id="aiFile" accept=".json,.csv,.txt,application/json,text/csv" hidden></div>
+     <div class="grid" style="margin-top:12px">
+      <div class="fld"><label for="ai_ver">Model version</label><input type="text" id="ai_ver" data-ai="version" placeholder="e.g. pDMFT-AI v1.0"></div>
+      <div class="fld"><label for="ai_hash">Output hash</label><input type="text" id="ai_hash" data-ai="hash" class="mono" placeholder="SHA-256"></div>
+      <div class="fld"><label for="ai_time">Run time</label><input type="text" id="ai_time" data-ai="runAt" placeholder="2026-11-03 10:20"></div>
+     </div>
+     <label class="ck" style="margin-top:10px"><input type="checkbox" id="ai_no" data-ai="noOutput"> AI produced no output (run error, images could not be processed)</label>
+    </div>
+   </div>
+  </div>
+  <h2>Results by tooth</h2>
+  <div id="aiChart"></div>
+  <div class="dmft" id="aiDmft" style="margin-top:12px"></div>
+  <div class="lockbar" id="aiLock"></div>
+ </section>
+
+ <!-- 5. PHOTO READING -->
+ <section data-panel="doc" hidden>
+  <h1>Photo-based diagnosis · vDMFT</h1>
+  <p class="lead">Two dentists read the same photo set independently, blind to the exam and AI results. Teeth coded differently by the two readers are settled by an adjudicator; vDMFT is the consensus result.</p>
+  <div class="row" role="radiogroup" aria-label="Reader role" id="readerRole" style="margin-bottom:14px"></div>
+  <div class="split">
+   <div id="docViewer"></div>
+   <div>
+    <div id="docChart"></div>
+    <div class="dmft" id="docDmft" style="margin-top:12px"></div>
+   </div>
+  </div>
+  <div class="lockbar" id="docLock"></div>
+ </section>
+
+ <!-- 6. COMPARISON -->
+ <section data-panel="sosanh" hidden>
+  <h1>Comparison</h1>
+  <p class="lead">Three measurements on the same person: cDMFT (clinical), vDMFT (dentists reading photos), pDMFT (AI). Opens only when all three are locked.</p>
+  <div id="cmpOne"></div>
+  <h2 style="margin-top:34px">Whole sample</h2>
+  <p class="note">Monitoring during data collection. Main conclusions follow the statistical analysis plan (SAP), not this table.</p>
+  <div id="cmpAll"></div>
+ </section>
+
+ <!-- GUIDE -->
+ <section data-panel="hd" hidden>
+  <h1>How to use</h1>
+  <p class="lead">Each participant is one record. A record goes through 6 steps in the order set by the protocol; each step is done by a different person and locked when finished. This page walks through one new record from start to end.</p>
+  <div class="row" style="margin-bottom:18px"><button class="btn pri" type="button" data-newrec="1">+ Start a new record</button><button class="btn" type="button" data-demo="1">View a filled-in example</button></div>
+
+  <div class="guide">
+   <div class="gcard">
+    <h2>Before you start</h2>
+    <ul class="gl">
+     <li><b>Share the page.</b> The page is private. The owner (the PhD student) clicks <b>Share</b> and invites the examiner, photographer, the 2 reading dentists, the adjudicator and the AI engineer with permission to enter data. Everyone sees the same list of records.</li>
+     <li><b>Top right corner.</b> <span class="pill ok">Synced</span> means records are shared and visible on every device. <span class="pill mute">This device only</span> means data lives only in this browser: go to <b>Records → Backup</b> before closing the page.</li>
+     <li><b>Save and Lock are different.</b> <b>Save</b> keeps what you have entered; you can keep editing. <b>Lock</b> finalises that step; after locking it cannot be edited unless someone clicks <b>Unlock</b> and gives a reason (the reason goes into the audit log and the Excel export).</li>
+     <li><b>Blinding</b> (on by default) hides the other methods' results during data entry: reader 1 cannot see reader 2's reading, and Comparison opens only when all three measurements are locked. Do not switch it off during real data collection.</li>
+     <li><b>The 6-step bar</b> at the top shows the progress of the open record: a grey number is not started, <span class="pill warn">amber</span> is in progress, <span class="pill ok">✓ green</span> is locked. Click a step to go to it.</li>
+    </ul>
+   </div>
+
+   <div class="gstep"><div class="gn">1</div><div class="gb">
+    <h3>ID · screening <span class="who">Coordinator</span></h3>
+    <ol>
+     <li>Click <b>+ New record</b> (top of the page). Step 1 opens with a blank record.</li>
+     <li>Choose the <b>Site</b> (S1, S2, S3). The sequence number fills in with the next free number for that site; you can edit it or click <b>Next number</b>. The ID appears, e.g. <span class="mono">S1-0001</span>. If the ID already exists, the page shows it in red.</li>
+     <li>Enter the exam date, age (completed years from date of birth), sex, group, examiner ID, photographer ID and device ID. Do not enter names: the record carries only the ID.</li>
+     <li>Tick the 4 <b>inclusion criteria</b> and any <b>exclusion criteria</b>. The page shows <span class="pill ok">Eligible</span> or <span class="pill bad">Not eligible</span>. Ineligible people are still saved so they can be counted in the STARD flow diagram, but go no further.</li>
+     <li>Click <b>Save</b>. The record now appears in <b>Records</b>.</li>
+    </ol>
+    <p class="gdone">Done when: the ID exists, the page says “Eligible”, and the record is saved.</p></div></div>
+
+   <div class="gstep"><div class="gn">2</div><div class="gb">
+    <h3>Clinical exam · cDMFT <span class="who">Calibrated examiner</span></h3>
+    <ol>
+     <li>Open the record (Records → <b>Open</b>) and go to <b>Clinical exam</b>.</li>
+     <li>Choose the entry mode at the top of the chart: <b>Surfaces</b> (default, as in the original VOSER) or <b>Whole tooth</b>.</li>
+     <li><b>By surface:</b> click a tooth; below it a diagram of its 5 surfaces appears (4 for anterior teeth): <b>O</b> occlusal in the centre, <b>B</b> buccal, <b>L</b> lingual, <b>M</b> mesial (towards the midline), <b>D</b> distal. Type the code for the selected surface: 0 sound, 1 decayed, 2 filled with decay, 3 filled without decay, 6 fissure sealant. The selection moves to the next surface, then to the next tooth. For a missing, unerupted, prosthetic or unexaminable tooth type a whole-tooth code: 4, 5, 7, 8, 9. The tooth code is derived in WHO order: decay and filling → 2; decay → 1; filling → 3; sealant → 6; otherwise 0. Each tooth shows a small cross coloured by surface.</li>
+     <li><b>By whole tooth:</b> click a tooth and type 0–9; the selection moves to the next tooth (18 → 11, 21 → 28, then 48 → 41, 31 → 38). Faster, but DMFS and lesion-location analysis are not possible.</li>
+     <li>Many sound teeth: code the affected teeth first, then click <b>Uncoded surfaces = 0</b> (or <b>Uncoded teeth = 0</b> in whole-tooth mode). Unerupted third molars: <b>Uncoded third molars = 8</b>.</li>
+     <li>Tooth lost for a reason the participant cannot remember: code <b>5</b> (with code 5 the selection stays on that tooth), then click <b>U flag</b> or press <span class="kbd">U</span>. A small U appears in the corner of the tooth; press again to remove it.</li>
+     <li>Check the boxes computed below the chart: D, M, F, cDMFT (28 teeth), cDMFT32 (when all 4 third molars are coded), hDMFT, and with surface entry cDMF-S and hDMF-S (a missing tooth counts 5 surfaces posterior, 4 anterior).</li>
+     <li>Click <b>Save</b>, then <b>Lock clinical exam</b>. Lock before the participant goes to photography.</li>
+    </ol>
+    <p class="gdone">Done when: all 28 main teeth are coded and the exam is locked. If more than 8 teeth are absent, the page warns that this is an exclusion criterion.</p></div></div>
+
+   <div class="gstep"><div class="gn">3</div><div class="gb">
+    <h3>Photos · 5 views <span class="who">Photographer (not the examiner)</span></h3>
+    <ol>
+     <li>Go to <b>Photos</b>. Click the frame of each view (Frontal, Right lateral, Left lateral, Upper occlusal, Lower occlusal) to choose a photo, or drag the photo onto the frame. Photos keep their original resolution.</li>
+     <li>Rate the 4 criteria for each view (0 unusable, 1 usable with limitations, 2 good). A view with any criterion at 0 is <span class="pill bad">Below minimum</span>: retake, choose the new photo, increase <b>Retakes</b> and record the reason (blur, glare, saliva…).</li>
+     <li>At most 2 retakes per view. If a view still fails after 2 retakes, the set is recorded as <b>no output</b>; the person stays in the denominator.</li>
+     <li>Do not look at AI results when deciding on retakes.</li>
+     <li><b>Edit photo</b> (button under each photo): rotate 90°, flip horizontally or vertically (occlusal photos taken with a mirror are reversed), straighten (±20°), crop (click <b>Crop</b> then drag on the photo), brightness, contrast, saturation, colour temperature. Click <b>Apply</b>. The original is not changed; edits are stored as settings, marked “Edited”, and written to Excel. The AI and Photo reading steps have a <b>View original</b> button for comparison.</li>
+     <li>Define in the SOP in advance which edits are allowed. Suggestion: only fix orientation (rotate, flip) and crop away areas outside the mouth; limit brightness and colour changes, because they can reveal or hide lesions. Readers and the AI must use the same version of each photo.</li>
+     <li>Click <b>Save</b> (photos are uploaded now), then <b>Lock final photo set</b>.</li>
+    </ol>
+    <p class="gdone">Done when: 5 photos, all 5 views meet the minimum (or no output is recorded), and the set is locked.</p></div></div>
+
+   <div class="gstep"><div class="gn">4</div><div class="gb">
+    <h3>AI diagnosis · pDMFT <span class="who">AI engineer</span></h3>
+    <ol>
+     <li>Run pDMFT-AI (the locked version) on the final photo set outside this page. This page does not run the model.</li>
+     <li>Go to <b>AI diagnosis</b>. Paste the results into <b>Load results</b> and click <b>Apply</b>, or click <b>Load .json/.csv file</b>. Format: one line per tooth <span class="mono">tooth,code</span> (e.g. <span class="mono">16,1</span>), or JSON <span class="mono">{"16":"1","26":"3"}</span>. Invalid codes and third molars are skipped and reported.</li>
+     <li>You can also enter or correct codes by hand on the tooth chart. pDMFT codes: 0 sound, 1 decayed, 2 filled with decay, 3 filled without decay, 4 absent, 7 fixed prosthesis, 9 not assessable.</li>
+     <li>Record the model version, output hash and run time. If the model failed, tick <b>AI produced no output</b>.</li>
+     <li>Click <b>Save</b>, then <b>Lock AI output</b>.</li>
+    </ol>
+    <p class="gdone">Done when: all 28 teeth are coded (or no output is recorded) and the output is locked.</p></div></div>
+
+   <div class="gstep"><div class="gn">5</div><div class="gb">
+    <h3>Photo reading · vDMFT <span class="who">Reader 1, reader 2, adjudicator</span></h3>
+    <ol>
+     <li>Go to <b>Photo reading</b>, choose the right role: <b>Reader 1</b> or <b>Reader 2</b>, and enter the reader ID.</li>
+     <li>View the photos on the left: click a view name to switch, click the photo to zoom. Code the 28 teeth on the right, choosing a mode at the top of the chart:
+      <ul style="margin-top:4px"><li><b>Surfaces</b> (default): as in the clinical exam, each tooth has a diagram of surfaces O, B, L, M, D. Surface codes: 0 sound, 1 decayed, 2 filled with decay, 3 filled without decay, <b>9 not visible in the photo</b> (common for mesial and distal surfaces of posterior teeth). Whole-tooth codes: 4 absent, 7 fixed prosthesis. The tooth code is derived: decay and filling → 2, decay → 1, filling → 3, all surfaces 9 → 9, otherwise 0.</li>
+      <li><b>Whole tooth</b>: one code per tooth, exactly like the pDMFT-AI output.</li></ul>
+      Do not guess: code 9 for a surface or tooth you cannot see clearly. Surface coding shows which surface the reader saw the lesion on, for comparison with the clinical location.</li>
+     <li>Each reader clicks <b>Save</b> then <b>Lock reading</b>. Do not open the other reader's reading.</li>
+     <li>When both have locked, the <b>Adjudicator</b> chooses the Adjudicator role. The adjudicator decides by <b>whole-tooth code</b>: only teeth the two readers coded differently (red outline) can be clicked; the table below shows both codes and the surfaces each reader recorded.</li>
+     <li>Resolve all disagreements, click <b>Save</b>, then <b>Lock consensus vDMFT</b>. Agreement between the 2 readers (%, kappa) is shown in the blue box.</li>
+    </ol>
+    <p class="gdone">Done when: both readings and the consensus are locked.</p></div></div>
+
+   <div class="gstep"><div class="gn">6</div><div class="gb">
+    <h3>Comparison <span class="who">PhD student, statistician</span></h3>
+    <ol>
+     <li>When all three (clinical, consensus photo reading, AI) are locked, <b>Comparison</b> opens automatically. Before that, the page shows a lock and lists what is still pending.</li>
+     <li>The three cards at the top: cDMFT, vDMFT and pDMFT with D, M, F. The boxes below: V − C, A − C, |A − C| − |V − C| (H3), hDMFT, tooth-level agreement and kappa.</li>
+     <li><b>Tooth-by-tooth comparison</b>: each column is a tooth, the three rows are clinical, photo reading and AI. A red outline marks a tooth that differs from the clinical exam. Clinical codes 4, 5, 8 all count as “absent”, because photos cannot show why a tooth is missing.</li>
+     <li><b>Teeth decayed at the clinical exam, by surface</b>: for each decayed tooth, the decayed surfaces, the location, what each reader recorded, and whether photo reading and AI detected it.</li>
+     <li><b>Whole sample</b> pools every fully locked record: monitoring of H1, H2 (equivalence ±0.5 teeth), H3 (non-inferiority, margin 0.25), sensitivity and specificity for decayed teeth, sensitivity by lesion location, and the Bland–Altman plot. This is a monitoring table; the main conclusions follow the analysis plan.</li>
+    </ol></div></div>
+
+   <div class="gcard">
+    <h2>Records, export and backup</h2>
+    <ul class="gl">
+     <li><b>Records</b> (button at the end of the step bar) lists every record with 6 progress dots. Click <b>Open</b> to continue a record, <b>Delete</b> to delete it permanently (with confirmation).</li>
+     <li><b>Export Excel</b>: sheet <i>Theo_nguoi</i> (one row per person: indices, differences, photo quality, photo edits, lock times, unlock log), sheet <i>Theo_rang</i> (one row per tooth: clinical with surfaces, reader 1, reader 2, adjudicator, AI), sheet <i>Tu_dien</i> (dictionary). Column names are the same in both language versions.</li>
+     <li><b>Download photos .zip</b>: file names follow the SOP, e.g. <span class="mono">S1-0001_F_1_D2.jpg</span> (ID_view_attempt_device); edited copies are in the <span class="mono">da_chinh</span> folder.</li>
+     <li><b>Backup</b> to a .json file including photos; <b>Open backup</b> loads it into this page or another copy (the Vietnamese and English versions read the same backup file).</li>
+    </ul>
+   </div>
+
+   <div class="gcard">
+    <h2>Tooth chart shortcuts</h2>
+    <div class="tbwrap"><table class="tb"><tbody>
+     <tr><td><span class="kbd">0</span>–<span class="kbd">9</span></td><td>Whole-tooth mode: code the selected tooth, then move to the next tooth</td></tr>
+     <tr><td><span class="kbd">0</span> <span class="kbd">1</span> <span class="kbd">2</span> <span class="kbd">3</span> <span class="kbd">6</span> / <span class="kbd">9</span></td><td>Surface mode: code the selected surface (6 clinical only, 9 photo reading only), then move to the next surface</td></tr>
+     <tr><td><span class="kbd">4</span> <span class="kbd">5</span> <span class="kbd">7</span> <span class="kbd">8</span> <span class="kbd">9</span></td><td>Surface mode, clinical exam: code the whole tooth, then move to the next tooth (photo reading: 4, 7)</td></tr>
+     <tr><td><span class="kbd">↑</span> <span class="kbd">↓</span></td><td>Surface mode: change surface</td></tr>
+     <tr><td><span class="kbd">←</span> <span class="kbd">→</span></td><td>Previous or next tooth</td></tr>
+     <tr><td><span class="kbd">Backspace</span></td><td>Clear the selected code</td></tr>
+     <tr><td><span class="kbd">U</span></td><td>Toggle the U flag (reason for loss unknown) on a code-5 tooth in the clinical exam</td></tr>
+     <tr><td><span class="kbd">Esc</span></td><td>Deselect the tooth or close the photo editor</td></tr>
+    </tbody></table></div>
+   </div>
+
+   <div class="gcard">
+    <h2>Troubleshooting</h2>
+    <ul class="gl">
+     <li><b>The Lock button is greyed out:</b> the step is not complete; read the text to its left (e.g. “Entered 26/28 main teeth”). A record without a saved ID in step 1 cannot be locked either.</li>
+     <li><b>“Already has a record”:</b> the sequence number is taken; click <b>Next number</b>.</li>
+     <li><b>An error after locking:</b> click <b>Unlock (give reason)</b>, correct, save, lock again. Do not change the clinical exam after seeing photos or AI results.</li>
+     <li><b>The Save button is greyed out:</b> you are viewing the example record; click <b>+ New record</b>.</li>
+     <li><b>Photos will not upload:</b> the user has not been given edit permission; the owner grants it under Share.</li>
+     <li><b>Two people open the same record:</b> each step is saved separately, so the examiner and the readers do not overwrite each other; two people should not edit the same step at the same time.</li>
+    </ul>
+   </div>
+  </div>
+ </section>
+
+ <!-- LIST -->
+ <section data-panel="ds" hidden>
+  <h1>Records and data export</h1>
+  <p class="lead" id="dsSub">Each record has 6 parts; each part is saved separately, so several people can enter data at the same time without overwriting each other.</p>
+  <div class="export">
+   <div class="exp"><h3>Excel (.xlsx)</h3><p>Per-person sheet (indices, differences, photo quality), per-tooth sheet (clinical, reader 1, reader 2, adjudicator, AI) and a code dictionary.</p><button class="btn pri" id="btnXlsx" type="button">Export Excel</button></div>
+   <div class="exp"><h3>Photos (.zip)</h3><p>File names follow the SOP: ID_view_attempt_device, e.g. S1-0123_F_1_D2.jpg. Edited photos are kept separately in the da_chinh folder.</p><button class="btn" id="btnZip" type="button">Download photos .zip</button></div>
+   <div class="exp"><h3>Backup</h3><p>A .json file with every part and photo, to reopen later or move to another computer.</p><div class="row"><button class="btn" id="btnBackup" type="button">Backup</button><button class="btn" id="btnRestore" type="button">Open backup</button><input type="file" id="restoreFile" accept=".json,application/json" hidden></div></div>
+  </div>
+  <div class="row" style="margin-bottom:10px"><input type="text" id="search" placeholder="Search by ID" style="max-width:260px"><button class="btn" id="btnNew" type="button">+ New record</button><button class="btn" id="btnDemo" type="button">View example record</button></div>
+  <div class="tbwrap" id="list"></div>
+ </section>
+
+ <div class="foot">
+  <button class="btn" id="btnNew2" type="button">+ New record</button>
+  <div class="row"><button class="btn" id="btnPrev" type="button">← Previous step</button><button class="btn" id="btnNext" type="button">Next step →</button><button class="btn pri" id="btnSave2" type="button">Save</button></div>
+ </div>
+</main>
+
+<div id="toast" hidden></div>
+<div class="modal" id="modal" hidden><div class="modal-c" role="dialog" aria-modal="true"><p id="modalMsg"></p><div id="modalExtra"></div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="modalNo" type="button">Cancel</button><button class="btn pri" id="modalYes" type="button">OK</button></div></div></div>
+<div class="edm" id="edm" hidden><div class="edc" role="dialog" aria-modal="true" aria-labelledby="edTitle">
+ <div class="edv"><canvas id="edCanvas"></canvas></div>
+ <div class="edp">
+  <h3 id="edTitle">Edit photo</h3>
+  <p class="note" style="margin:0">The original photo is always kept unchanged. Edits are stored as settings and included in exported data. Readers and the AI must use the same version of the photo.</p>
+  <div class="edg"><b>Geometry</b>
+   <div class="row"><button class="btn sm" type="button" data-ed="rl">⟲ 90°</button><button class="btn sm" type="button" data-ed="rr">⟳ 90°</button><button class="btn sm" type="button" data-ed="fh">Flip horizontal</button><button class="btn sm" type="button" data-ed="fv">Flip vertical</button></div>
+   <div class="sl"><label for="ed_ang">Straighten</label><input type="range" id="ed_ang" data-edr="ang" min="-20" max="20" step="0.5"><output id="o_ang"></output></div>
+   <div class="row"><button class="btn sm" type="button" data-ed="crop" id="edCropBtn">Crop</button><button class="btn sm" type="button" data-ed="nocrop">Remove crop</button></div>
+   <span class="note" id="edCropNote" style="margin:0"></span></div>
+  <div class="edg"><b>Light and colour</b>
+   <div class="sl"><label for="ed_br">Brightness</label><input type="range" id="ed_br" data-edr="br" min="-60" max="60" step="1"><output id="o_br"></output></div>
+   <div class="sl"><label for="ed_ct">Contrast</label><input type="range" id="ed_ct" data-edr="ct" min="-60" max="60" step="1"><output id="o_ct"></output></div>
+   <div class="sl"><label for="ed_sa">Saturation</label><input type="range" id="ed_sa" data-edr="sa" min="-60" max="60" step="1"><output id="o_sa"></output></div>
+   <div class="sl"><label for="ed_tp">Colour temperature</label><input type="range" id="ed_tp" data-edr="tp" min="-60" max="60" step="1"><output id="o_tp"></output></div></div>
+  <div class="row" style="margin-top:auto;justify-content:space-between"><button class="btn" type="button" data-ed="reset">Reset</button><span class="row"><button class="btn" type="button" data-ed="cancel">Cancel</button><button class="btn pri" type="button" data-ed="apply">Apply</button></span></div>
+ </div></div></div>
+<div class="busy" id="busy" hidden><span id="busyMsg">Working…</span></div>
+<input type="file" id="photoFile" accept="image/*" hidden>
+
+<script src="lib/xlsx.full.min.js"></script>
+<script src="lib/jszip.min.js"></script>
+<script>
+"use strict";
+/* ================= STUDY CONVENTIONS ================= */
+const U8=[18,17,16,15,14,13,12,11], U8R=[21,22,23,24,25,26,27,28];
+const L8=[48,47,46,45,44,43,42,41], L8R=[31,32,33,34,35,36,37,38];
+const WIS=[18,28,38,48];
+const T32=[...U8,...U8R,...L8,...L8R];
+const T28=T32.filter(t=>!WIS.includes(t));
+const WHO=[["0","Sound","White or chalky spots count as sound"],["1","Decayed","Unmistakable cavity, undermined enamel, softened floor or wall"],["2","Filled, with decay","Has a filling and has decay"],["3","Filled, no decay","Includes crowns placed because of caries"],["4","Missing due to caries",""],["5","Missing, other reason","Orthodontic, periodontal, trauma, congenital"],["6","Fissure sealant","Not counted in DMFT"],["7","Bridge abutment, special crown, implant","Not counted in DMFT"],["8","Unerupted","Not counted"],["9","Not recorded","Not counted"]];
+const PH=[["0","Sound","Includes teeth with fissure sealant"],["1","Decayed",""],["2","Filled, with decay","Counted as D"],["3","Filled, no decay",""],["4","Absent","Merges WHO 4, 5, 8: photos cannot show why a tooth is missing"],["7","Fixed prosthesis",""],["9","Not assessable","Blur, glare, saliva, obstructed"]];
+const kindW=c=>({"0":"S","6":"S","1":"D","2":"D","3":"F","4":"M","5":"A","8":"A","7":"X","9":"X"})[c]||"";
+const kindP=c=>({"0":"S","1":"D","2":"D","3":"F","4":"M","7":"X","9":"X"})[c]||"";
+/* harmonised status for tooth-level comparison: S D F A(absent) X(excluded) */
+const harmW=c=>({"0":"S","6":"S","1":"D","2":"D","3":"F","4":"A","5":"A","8":"A","7":"X","9":"X"})[c]||"";
+const harmP=c=>({"0":"S","1":"D","2":"D","3":"F","4":"A","7":"X","9":"X"})[c]||"";
+const VIEWS=[{k:"F",l:"Frontal",en:"Frontal"},{k:"R",l:"Right lateral",en:"Right lateral"},{k:"L",l:"Left lateral",en:"Left lateral"},{k:"MX",l:"Upper occlusal",en:"Upper occlusal"},{k:"MD",l:"Lower occlusal",en:"Lower occlusal"}];
+const QCRIT=["Sharpness (focus, motion)","Lighting, glare","Saliva, mirror fogging","Coverage and angle"];
+const INCL=[["i_age","Aged 18–25 (from 18th birthday to before 26th birthday), living in Vietnam"],["i_perm","Has permanent teeth"],["i_consent","Written informed consent"],["i_coop","Can open the mouth and cooperate enough for the exam and 5 photos"]];
+const EXCL=[["e_ortho","Active fixed orthodontic appliance or removable denture (bonded retainers are not excluded)"],["e_prim","Retained primary teeth or visible supernumerary teeth"],["e_miss","More than 8 of the 28 teeth absent (third molars not counted)"],["e_acute","Acute pain needing immediate emergency care"],["e_tx","Dental treatment between the exam and photography"]];
+const STEPS=[{k:"ma",l:"ID",s:"Screening"},{k:"kham",l:"Clinical exam",s:"cDMFT"},{k:"anh",l:"Photos",s:"5 views"},{k:"ai",l:"AI diagnosis",s:"pDMFT"},{k:"doc",l:"Photo reading",s:"vDMFT"},{k:"sosanh",l:"Comparison",s:"3 indices"}];
+const PARTS=["meta","clin","photo","ai","r1","r2","arb"];
+/* tooth surfaces (VOSER): Nhai occlusal, N buccal, T lingual, G mesial, X distal; anterior teeth have no occlusal surface */
+const SLAB={Nhai:"Occlusal",N:"Buccal",T:"Lingual",G:"Mesial",X:"Distal"};
+const surfOf=t=>(t%10>=4)?["Nhai","G","X","N","T"]:["G","X","N","T"];
+const SCODES=[["0","Sound"],["1","Decayed"],["2","Filled, with decay"],["3","Filled, no decay"],["6","Fissure sealant"]];
+const WHOLE=[["4","Missing due to caries"],["5","Missing, other reason"],["7","Bridge abutment, crown, implant"],["8","Unerupted"],["9","Not recorded"]];
+const isWhole=x=>["4","5","7","8","9"].includes(x);
+/* photo surface codes: 9 = surface not visible in the photo; whole-tooth codes: 4 absent, 7 fixed prosthesis */
+const PSC=[["0","Sound"],["1","Decayed"],["2","Filled, with decay"],["3","Filled, no decay"],["9","Not visible"]];
+const PWH=[["4","Absent"],["7","Fixed prosthesis"]];
+const SURFCH=["clin","r1","r2"];
+const SCFG=ch=>ch==="clin"?{S:SCODES,W:WHOLE,order:T32,photo:false}:{S:PSC,W:PWH,order:T28,photo:true};
+const wholeOf=(ch,x)=>ch==="clin"?isWhole(x):(x==="4"||x==="7");
+const SK={Nhai:"O",N:"B",T:"L",G:"M",X:"D"};
+const LOCL={O:"Occlusal",P:"Proximal (mesial/distal)",S:"Buccal/lingual","?":"No surface data"};
+let selS=null;
+const ALPHA=0.05/3, MARGIN=0.5, NI=0.25;
+
+/* ================= UTILITIES ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt=(x,d=2)=>x==null||!isFinite(x)?"–":(x<0?"−":"")+Math.abs(x).toFixed(d);
+const sgn=(x,d=2)=>x==null||!isFinite(x)?"–":(x>0?"+":x<0?"−":"±")+Math.abs(x).toFixed(d);
+const pct=x=>x==null||!isFinite(x)?"–":(100*x).toFixed(1)+"%";
+const docId=id=>String(id).normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9_-]+/g,"-").slice(0,120);
+const nowISO=()=>new Date().toISOString();
+const when=s=>s?new Date(s).toLocaleString("en-GB"):"";
+function toast(msg,ms=2800){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,ms);}
+function ask(msg,yes="OK",withReason=false){return new Promise(res=>{$("#modalMsg").textContent=msg;$("#modalYes").textContent=yes;
+  $("#modalExtra").innerHTML=withReason?`<div class="fld"><label for="modalReason">Reason (required, saved to the audit log)</label><input type="text" id="modalReason"></div>`:"";
+  $("#modal").hidden=false;const done=v=>{$("#modal").hidden=true;$("#modalYes").onclick=$("#modalNo").onclick=null;res(v);};
+  $("#modalYes").onclick=()=>{if(withReason){const r=($("#modalReason").value||"").trim();if(!r){$("#modalReason").focus();return;}done(r);}else done(true);};
+  $("#modalNo").onclick=()=>done(false);(withReason?$("#modalReason"):$("#modalYes")).focus();});}
+function busy(msg){$("#busyMsg").textContent=msg||"Working…";$("#busy").hidden=!msg;}
+
+/* ---- statistics ---- */
+function invNorm(p){const a=[-39.6968302866538,220.946098424521,-275.928510446969,138.357751867269,-30.6647980661472,2.50662827745924],b=[-54.4760987982241,161.585836858041,-155.698979859887,66.8013118877197,-13.2806815528857],c=[-.00778489400243029,-.322396458041136,-2.40075827716184,-2.54973253934373,4.37466414146497,2.93816398269878],d=[.00778469570904146,.32246712907004,2.445134137143,3.75440866190742];
+  const pl=.02425;let q,r;if(p<pl){q=Math.sqrt(-2*Math.log(p));return(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+  if(p<=1-pl){q=p-.5;r=q*q;return(((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);}
+  q=Math.sqrt(-2*Math.log(1-p));return-(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);}
+function tq(p,df){const z=invNorm(p);return z+(z**3+z)/(4*df)+(5*z**5+16*z**3+3*z)/(96*df*df)+(3*z**7+19*z**5+17*z**3-15*z)/(384*df**3);}
+function msd(a){const n=a.length;if(!n)return{n:0};const m=a.reduce((s,x)=>s+x,0)/n;const sd=n>1?Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(n-1)):NaN;return{n,m,sd};}
+function kappa(pairs,cats){const n=pairs.length;if(n<2)return{n,po:NaN,k:NaN};let ag=0;const ra={},rb={};cats.forEach(c=>{ra[c]=0;rb[c]=0;});
+  pairs.forEach(([x,y])=>{if(x===y)ag++;ra[x]=(ra[x]||0)+1;rb[y]=(rb[y]||0)+1;});const po=ag/n;let pe=0;cats.forEach(c=>pe+=(ra[c]/n)*(rb[c]/n));return{n,po,k:pe<1?(po-pe)/(1-pe):NaN};}
+
+/* ================= STATE ================= */
+/* ---- on-device storage (IndexedDB) ---- */
+const IDB_NAME="voser-pdmft",IDB_VER=1;let idb=null;
+function idbOpen(){return new Promise((ok,no)=>{const q=indexedDB.open(IDB_NAME,IDB_VER);
+  q.onupgradeneeded=()=>{PARTS.forEach(p=>{if(!q.result.objectStoreNames.contains(p))q.result.createObjectStore(p);});};
+  q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error);});}
+function idbTx(p,fn){return new Promise((ok,no)=>{if(!idb){ok();return;}const t=idb.transaction(p,"readwrite");fn(t.objectStore(p));t.oncomplete=()=>ok();t.onerror=()=>no(t.error);t.onabort=()=>no(t.error);});}
+function idbAll(p){return new Promise((ok,no)=>{const t=idb.transaction(p,"readonly"),s=t.objectStore(p),m=new Map();const c=s.openCursor();
+  c.onsuccess=()=>{const k=c.result;if(k){m.set(k.key,k.value);k.continue();}else ok(m);};c.onerror=()=>no(c.error);});}
+let saveErr=false;
+function warnSave(e){if(!saveErr){saveErr=true;toast("Could not write to device storage: "+(e?.message||e)+". Make a Backup now.",8000);}}
+class PMap extends Map{constructor(p,it){super(it);this.p=p;}
+  set(k,v){super.set(k,v);if(this.p)idbTx(this.p,s=>s.put(v,k)).catch(warnSave);return this;}
+  delete(k){const r=super.delete(k);if(this.p)idbTx(this.p,s=>s.delete(k)).catch(warnSave);return r;}}
+let store={}; PARTS.forEach(p=>store[p]=new PMap(null));   // part -> Map(id -> doc)
+let cur=null;            // {id, demo, meta, clin, photo, ai, r1, r2, arb}
+let dirty=new Set();
+let mode="local", db=null, assets=null, dl=null;
+let tab="ma", role="r1", sel=null, viewK={ai:"F",doc:"F"};
+const pending={};        // photos not yet uploaded: view -> {blob,url}
+const blank=()=>({id:"",demo:false,meta:{ngay:new Date().toISOString().slice(0,10)},clin:{c:{},u:{},s:{},mode:"surf"},photo:{views:{}},ai:{c:{}},r1:{c:{},s:{},mode:"surf"},r2:{c:{},s:{},mode:"surf"},arb:{c:{}}});
+
+/* ================= INDICES ================= */
+const filled=(c,teeth)=>teeth.filter(t=>c&&c[t]!==undefined&&c[t]!=="").length;
+function idxWHO(c,teeth,age){let D=0,M=0,F=0,n9=0;teeth.forEach(t=>{const x=c?.[t];if(x==="1"||x==="2")D++;else if(x==="3")F++;else if(x==="4"||(x==="5"&&age>=30))M++;if(x==="9")n9++;});return{D,M,F,T:D+M+F,n9};}
+function idxH(c){let D=0,M=0,F=0;T28.forEach(t=>{const x=c?.[t];if(x==="1"||x==="2")D++;else if(x==="3")F++;else if(["4","5","8"].includes(x))M++;});return{D,M,F,T:D+M+F};}
+function idxP(c){let D=0,M=0,F=0,n9=0;T28.forEach(t=>{const x=c?.[t];if(x==="1"||x==="2")D++;else if(x==="3")F++;else if(x==="4")M++;if(x==="9")n9++;});return{D,M,F,T:D+M+F,n9};}
+function deriveTooth(s,t,photo){if(!s)return"";const ks=surfOf(t);if(ks.some(k=>s[k]===undefined||s[k]===""))return"";const v=ks.map(k=>s[k]);
+  const hD=v.some(x=>x==="1"||x==="2"),hF=v.some(x=>x==="2"||x==="3");
+  return hD&&hF?"2":hD?"1":hF?"3":(!photo&&v.includes("6"))?"6":(photo&&v.every(x=>x==="9"))?"9":"0";}
+function applySurf(p,t,k,code,ch="clin"){p.s=p.s||{};if(wholeOf(ch,p.c[t])){delete p.c[t];if(p.u)delete p.u[t];}
+  const o={...(p.s[t]||{})};if(code==="")delete o[k];else o[k]=code;p.s[t]=o;const d=deriveTooth(o,t,ch!=="clin");if(d)p.c[t]=d;else delete p.c[t];}
+function applyWhole(p,t,code){p.c[t]=code;if(p.s)delete p.s[t];if(code!=="5"&&p.u)delete p.u[t];}
+function idxS(p,age,ch="clin"){let D=0,F=0,M=0,HM=0,miss=0;T28.forEach(t=>{const n=t%10>=4?5:4;const x=p.c?.[t];const s=p.s?.[t];
+  if(wholeOf(ch,x)){if(x==="4"||(ch==="clin"&&x==="5"&&age>=30))M+=n;if(["4","5","8"].includes(x))HM+=n;return;}
+  if(!s||surfOf(t).some(k=>s[k]===undefined)){miss++;return;}
+  surfOf(t).forEach(k=>{if(s[k]==="1"||s[k]==="2")D++;else if(s[k]==="3")F++;});});
+  return{D,M,F,T:D+M+F,HT:D+HM+F,miss};}
+function locOf(p,t){const s=p.s?.[t];if(!s)return"?";const dk=surfOf(t).filter(k=>s[k]==="1"||s[k]==="2");if(!dk.length)return"?";
+  return dk.some(k=>k==="G"||k==="X")?"P":dk.includes("Nhai")?"O":"S";}
+function surfStr(p,t){const s=p?.s?.[t];if(!s)return"";return surfOf(t).filter(k=>s[k]&&s[k]!=="0").map(k=>`${SLAB[k].replace(" ","")} ${s[k]}`).join(", ");}
+function idxU(c,u){let M=0;T28.forEach(t=>{const x=c?.[t];if(x==="4"||(x==="5"&&u?.[t]))M++;});return M;}
+function consensus(r){const o={};T28.forEach(t=>{const a=r.r1?.c?.[t],b=r.r2?.c?.[t];if(a!==undefined&&a!==""&&a===b)o[t]=a;else if(r.arb?.c?.[t])o[t]=r.arb.c[t];});return o;}
+function disagree(r){return T28.filter(t=>{const a=r.r1?.c?.[t],b=r.r2?.c?.[t];return a&&b&&a!==b;});}
+function ageOf(r){return +(r.meta?.tuoi)||0;}
+function viewPass(v){return v&&Array.isArray(v.q)&&v.q.length===4&&v.q.every(x=>x!==""&&x!=null)&&v.q.every(x=>+x>0);}
+function viewRated(v){return v&&Array.isArray(v.q)&&v.q.length===4&&v.q.every(x=>x!==""&&x!=null);}
+function photoState(r){const vs=VIEWS.map(({k})=>r.photo?.views?.[k]);const has=VIEWS.filter(({k})=>{const v=r.photo?.views?.[k];return (v&&(v.asset||v.blob||v.dataUrl||v.local))||(r===cur&&pending[k]);}).length;const pass=VIEWS.filter(({k})=>{const v=r.photo?.views?.[k];return viewPass(v)&&((v.asset||v.blob||v.dataUrl||v.local)||(r===cur&&pending[k]));}).length;
+  const fail=VIEWS.filter(({k})=>{const v=r.photo?.views?.[k];return viewRated(v)&&!viewPass(v)&&(+v.retakes||0)>=2;}).length;return{has,pass,fail,noOut:fail>0};}
+function eligibility(m){const inc=INCL.every(([k])=>m?.[k]);const exc=EXCL.some(([k])=>m?.[k]);const age=+m?.tuoi;const ageOk=age>=18&&age<=25;
+  if(!m||(!INCL.some(([k])=>m[k])&&!EXCL.some(([k])=>m[k])))return{s:"none"};return{s:inc&&!exc&&ageOk?"ok":"no",ageOk,inc,exc};}
+function vLocked(r){return !!r.arb?.lock;}
+function triple(r){if(!(r.clin?.lock&&r.ai?.lock&&vLocked(r)))return null;
+  const age=ageOf(r);const C=idxWHO(r.clin.c,T28,age),H=idxH(r.clin.c),C32=filled(r.clin.c,WIS)===4?idxWHO(r.clin.c,T32,age):null;
+  const no=photoState(r).noOut||r.photo?.noOutput;const aiNo=no||r.ai?.noOutput;
+  const Vc=consensus(r);const V=no?null:idxP(Vc),A=aiNo?null:idxP(r.ai.c);
+  return{C,H,C32,V,A,Vc,no,aiNo,UM:idxU(r.clin.c,r.clin.u)};}
+
+/* ================= UI ================= */
+function renderSteps(){
+  const st=stepState(cur);
+  $("#steps").innerHTML=STEPS.map((s,i)=>`<button class="step st-${st[s.k]}" data-go="${s.k}" ${tab===s.k?'aria-current="page"':""} type="button"><span class="n">${st[s.k]==="lock"?"✓":i+1}</span><span class="t"><b>${s.l}</b><span>${s.s}${st[s.k]==="lock"?" · locked":st[s.k]==="part"?" · in progress":""}</span></span></button>`).join("")
+    +`<button class="step list" data-go="ds" ${tab==="ds"?'aria-current="page"':""} type="button"><span class="n">≡</span><span class="t"><b>Records</b><span>${countRecords()} record${countRecords()===1?"":"s"}</span></span></button>`
+    +`<button class="step list" data-go="hd" ${tab==="hd"?'aria-current="page"':""} type="button"><span class="n">?</span><span class="t"><b>Guide</b><span>how to use</span></span></button>`;
+}
+function stepState(r){const o={};if(!r)return o;
+  const e=eligibility(r.meta);o.ma=r.id&&e.s==="ok"?"lock":(r.id||e.s!=="none")?"part":"";
+  o.kham=r.clin?.lock?"lock":filled(r.clin?.c,T32)?"part":"";
+  o.anh=r.photo?.lock?"lock":photoState(r).has?"part":"";
+  o.ai=r.ai?.lock?"lock":filled(r.ai?.c,T28)||r.ai?.noOutput?"part":"";
+  o.doc=vLocked(r)?"lock":(filled(r.r1?.c,T28)||filled(r.r2?.c,T28))?"part":"";
+  o.sosanh=triple(r)?"lock":"";return o;}
+function countRecords(){const ids=new Set();PARTS.forEach(p=>store[p].forEach((_,k)=>ids.add(k)));return ids.size;}
+function showTab(k){tab=k;document.querySelectorAll("[data-panel]").forEach(s=>s.hidden=s.dataset.panel!==k);sel=null;renderAll();try{history.replaceState(null,"","#"+k);}catch{}window.scrollTo({top:0});}
+const blinded=()=>$("#blind").checked;
+function renderBanner(){
+  let h="";
+  if(cur?.demo)h+=`<div class="banner warn"><span><b>Example record.</b> Illustrative data to show how the app works; it cannot be saved. Click <b>+ New record</b> to start a real record.</span></div>`;
+  if(!cur?.demo&&!cur?.id&&tab==="ma")h+=`<div class="banner info"><span><b>New record.</b> Start by choosing the site and entering the details below, then click <b>Save</b>. First time? See the <button class="btn sm" type="button" data-go="hd">Guide</button></span></div>`;
+  if(mode==="local")h+=`<div class="banner bad"><span><b>Storage unavailable.</b> Records cannot be kept on this device (private browsing?). Go to Records and click Backup before closing.</span></div>`;
+  $("#topBanner").innerHTML=h;
+  const idEl=$("#idNow");idEl.textContent=cur?.id||"No ID yet";idEl.className="idnow"+(cur?.demo?" demo":"");
+  $("#dirtyChip").hidden=!dirty.size||cur?.demo;
+  $("#btnSave").disabled=$("#btnSave2").disabled=!!cur?.demo;
+}
+
+/* ---- tooth chart ---- */
+function toothBtn(chart,t,code,opt){const k=opt.kind(code);const cls=["tooth",code?("k-"+k):"blank"];if(WIS.includes(t))cls.push("k-W");
+  if(sel&&sel.chart===chart&&sel.t===t)cls.push("sel");if(opt.ghost?.includes(t))cls.push("ghost");if(opt.ring?.includes(t))cls.push("ring");if(opt.ro)cls.push("dis");
+  const fl=opt.flags?.[t]?`<span class="flag">${opt.flags[t]}</span>`:"";
+  const sv=opt.surf&&!wholeOf(chart,code)?miniCross(t,opt.surf[t]):"";
+  return `<button type="button" class="${cls.join(" ")}" data-chart="${chart}" data-t="${t}" aria-label="Tooth ${t}: ${code?esc(code):"not entered"}"${opt.ghost?.includes(t)||opt.ro?' tabindex="-1"':""}><span class="tn">${t}</span><span class="tc">${code?esc(code):"·"}</span>${sv}${fl}</button>`;}
+function crossPos(t){const q=Math.floor(t/10),up=q===1||q===2,mr=q===1||q===4;return{N:up?"t":"b",T:up?"b":"t",G:mr?"r":"l",X:mr?"l":"r",Nhai:"c"};}
+function sFill(x){return x===undefined||x===""?"none":x==="9"?"var(--line)":x==="1"||x==="2"?"var(--d)":x==="3"?"var(--f)":x==="6"?"var(--ok)":"var(--sunken)";}
+function miniCross(t,s){const P=crossPos(t),xy={t:[6,0],b:[6,12],l:[0,6],r:[12,6],c:[6,6]};
+  return `<svg class="mini" width="18" height="18" viewBox="-0.5 -0.5 19 19" aria-hidden="true">${surfOf(t).map(k=>{const [x,y]=xy[P[k]];return `<rect x="${x}" y="${y}" width="6" height="6" rx="1" style="fill:${sFill(s?.[k])};stroke:var(--muted);stroke-width:.7"/>`;}).join("")}</svg>`;}
+function surfEditorHTML(ch){const p=partOf(ch),cfg=SCFG(ch);
+  if(!sel||sel.chart!==ch)return `<div class="sed"><div class="note" style="grid-column:1/-1;margin:0">Click a tooth to code each surface.</div></div>`;
+  const t=sel.t,s=p.s?.[t]||{},code=p.c?.[t]||"",wh=wholeOf(ch,code),P=crossPos(t),pos={t:"t1",b:"b1",l:"l1",r:"r1",c:"ctr"};
+  const kOf=x=>x==="1"||x==="2"?"k-D":x==="3"?"k-F":x==="6"?"k-SL":"";
+  const cells=surfOf(t).map(k=>{const x=s[k];return `<button type="button" class="sb ${pos[P[k]]} ${wh?"":kOf(x)} ${x===undefined||wh?"blank":""} ${selS===k&&!wh?"on":""}" data-surf="${k}" title="${SLAB[k]}"><b>${wh?"–":x??"·"}</b>${SK[k]}</button>`;}).join("");
+  const dis=p.lock?"disabled":"";
+  return `<div class="sed"><div class="sx"><div class="lab">${t}</div>${cells}</div>
+   <div class="sedp"><div class="row" style="justify-content:space-between;margin-bottom:8px"><b>Tooth ${t}${code?` · tooth code ${esc(code)}`:" · surfaces incomplete"}</b><span class="note" style="margin:0">${wh?"Coding the whole tooth.":`Selected surface: <b>${SLAB[selS]||"–"}</b>`}</span></div>
+    <h4>Code for the selected surface</h4><div class="palette">${cfg.S.map(([c,l])=>`<button type="button" class="pc k-${c==="1"||c==="2"?"D":c==="3"?"F":c==="9"?"X":"S"}" data-scode="${c}" ${dis}><span class="k">${c}</span>${esc(l)}</button>`).join("")}<button type="button" class="pc" data-scode="" ${dis}><span class="k">⌫</span>Clear surface</button></div>
+    <h4>Code for the whole tooth</h4><div class="palette">${cfg.W.map(([c,l])=>`<button type="button" class="pc k-${ch==="clin"?kindW(c):kindP(c)}" data-wcode="${c}" ${dis}><span class="k">${c}</span>${esc(l)}</button>`).join("")}
+     ${ch==="clin"?`<button type="button" class="pc" data-uflag="clin" ${code!=="5"||p.lock?"disabled":""}><span class="k" style="color:var(--warn)">U</span>U flag</button>`:""}</div>
+    <div class="row"><button type="button" class="btn sm" data-allsound="1" ${dis}>Whole tooth sound (all surfaces = 0)</button>${cfg.photo?`<button type="button" class="btn sm" data-allnine="1" ${dis}>Whole tooth not visible (all surfaces = 9)</button>`:""}<button type="button" class="btn sm danger" data-clrtooth="1" ${dis}>Clear this tooth</button></div></div></div>`;}
+function chartHTML(chart,codes,opt){
+  const w=opt.teeth.some(t=>WIS.includes(t));const g=(arr)=>arr.filter(t=>w||!WIS.includes(t)).map(t=>opt.teeth.includes(t)?toothBtn(chart,t,codes?.[t]??"",opt):`<span></span>`).join("");
+  const set=opt.set;const selCode=sel&&sel.chart===chart?codes?.[sel.t]??"":"";
+  return `<div class="chartbox${opt.surf?" surfmode":""}">
+   <div class="jawlab"><span>Patient's right</span><span>Upper jaw</span><span>Patient's left</span></div>
+   <div class="chart-scroll" style="--nc:${w?8:7}"><div class="arch">${g(U8)}<span class="mid"></span>${g(U8R)}</div>
+   <div class="archsep"></div>
+   <div class="arch">${g(L8)}<span class="mid"></span>${g(L8R)}</div></div>
+   <div class="jawlab" style="margin-top:4px"><span></span><span>Lower jaw</span><span></span></div>
+   ${opt.ro?"":opt.surf?surfEditorHTML(chart)+`<div class="chart-tools"><span>Type ${SCFG(chart).S.map(([c])=>`<span class="kbd">${c}</span>`).join(" ")} for the selected surface (moves to the next surface, then to the next tooth); ${SCFG(chart).W.map(([c])=>`<span class="kbd">${c}</span>`).join(" ")} for the whole tooth; <span class="kbd">↑</span><span class="kbd">↓</span> change surface; <span class="kbd">←</span><span class="kbd">→</span> change tooth.</span>
+    <span class="row"><button type="button" class="btn sm" data-fill0s="${chart}">Uncoded surfaces = 0</button>${chart==="clin"?`<button type="button" class="btn sm" data-fill8="clin">Uncoded third molars = 8</button>`:""}</span></div>`:`<div class="palette" role="group" aria-label="Choose code">${set.map(([c,l])=>`<button type="button" class="pc k-${opt.kind(c)}" data-code="${c}" data-chartp="${chart}" ${!sel||sel.chart!==chart?"disabled":""} title="${esc(l)}"><span class="k">${c}</span>${esc(l)}</button>`).join("")}
+    ${opt.uflag?`<button type="button" class="pc" data-uflag="${chart}" ${!sel||sel.chart!==chart||(codes?.[sel.t]!=="5")?"disabled":""}><span class="k" style="color:var(--warn)">U</span>U flag (reason for loss unknown)</button>`:""}
+    <button type="button" class="pc" data-code="" data-chartp="${chart}" ${!sel||sel.chart!==chart?"disabled":""}><span class="k">⌫</span>Clear</button></div>
+   <div class="chart-tools"><span>${sel&&sel.chart===chart?`Tooth <b class="mono">${sel.t}</b>${selCode?` · code ${esc(selCode)}`:""} · `:"Click a tooth, then choose a code. "}Press <span class="kbd">0</span>–<span class="kbd">9</span> to record and move to the next tooth; <span class="kbd">←</span><span class="kbd">→</span> move.</span>
+    <span class="row">${opt.nofill?"":`<button type="button" class="btn sm" data-fill0="${chart}">Uncoded teeth = 0</button>`}${opt.wis?`<button type="button" class="btn sm" data-fill8="${chart}">Uncoded third molars = 8</button>`:""}</span></div>`}
+  </div>`;}
+function dmftHTML(x,lab="DMFT"){if(!x)return"";return `<div class="dm"><b>${x.D}</b><span>D</span></div><div class="dm"><b>${x.M}</b><span>M</span></div><div class="dm"><b>${x.F}</b><span>F</span></div><div class="dm tot"><b>${x.T}</b><span>${lab}</span></div>${x.n9!=null?`<div class="dm"><b>${x.n9}</b><span>CODE 9</span></div>`:""}`;}
+function lockHTML(part,label,ok,msg,locked){
+  return locked?`<span class="msg"><span class="pill ok">Locked</span> ${esc(label)} · ${when(locked.at)}</span><button class="btn sm" data-unlock="${part}" type="button" ${cur.demo?"disabled":""}>Unlock (give reason)</button>`
+   :`<span class="msg">${msg}</span><button class="btn lock" data-lock="${part}" type="button" ${ok&&!cur.demo?"":"disabled"}>Lock ${esc(label)}</button>`;}
+
+/* ---- 1. ID ---- */
+function renderMa(){
+  const m=cur.meta;document.querySelectorAll("[data-m]").forEach(el=>{if(document.activeElement!==el)el.value=m[el.dataset.m]??"";});
+  $("#inclBox").innerHTML=INCL.map(([k,l])=>`<label class="ck"><input type="checkbox" data-mc="${k}" ${m[k]?"checked":""}>${esc(l)}</label>`).join("");
+  $("#exclBox").innerHTML=EXCL.map(([k,l])=>`<label class="ck"><input type="checkbox" data-mc="${k}" ${m[k]?"checked":""}>${esc(l)}</label>`).join("");
+  const e=eligibility(m);const age=+m.tuoi;
+  $("#eligOut").innerHTML=e.s==="ok"?`<span class="pill ok">Eligible</span>`:e.s==="no"?`<span class="pill bad">Not eligible</span> <span class="note">${!e.ageOk?"Age outside 18–25. ":""}${!e.inc?"Inclusion criteria not all met. ":""}${e.exc?"An exclusion criterion applies. Record the reason in the STARD flow diagram.":""}</span>`:`<span class="pill mute">Not screened</span>`;
+  if(m.tuoi&&(age<18||age>25)&&e.s==="none")$("#eligOut").innerHTML=`<span class="pill warn">Age outside 18–25</span>`;
+  const id=cur.demo?cur.id:buildId();$("#idCode").textContent=id||"—";
+  const clash=!cur.demo&&id&&id!==cur.id&&store.meta.has(docId(id));
+  $("#idMsg").innerHTML=!id?"Choose a site and sequence number.":clash?`<span style="color:var(--bad)">ID ${esc(id)} already has a record.</span>`:(cur.id&&id!==cur.id?`The ID will change from ${esc(cur.id)} on saving.`:"");
+}
+function buildId(){const s=cur.meta.site,n=+cur.meta.stt;return s&&n>0?`${s}-${String(n).padStart(4,"0")}`:"";}
+function nextStt(site){let mx=0;store.meta.forEach(d=>{if(d.site===site)mx=Math.max(mx,+d.stt||0);});return mx+1;}
+
+/* ---- 2. CLINICAL ---- */
+function renderKham(){
+  const c=cur.clin;const lk=!!c.lock;
+  const flags={};Object.keys(c.u||{}).forEach(t=>{if(c.u[t])flags[t]="U";});
+  const sm=c.mode==="surf";
+  const noSurf=sm?T32.filter(t=>c.c?.[t]&&!isWhole(c.c[t])&&!c.s?.[t]).length:0;
+  $("#khamChart").innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:10px"><span class="row"><span class="note" style="margin:0">Enter by</span><span class="modeseg" role="group" aria-label="Entry mode"><button type="button" data-mode="surf" data-modep="clin" aria-pressed="${sm}" ${lk?"disabled":""}>Surfaces</button><button type="button" data-mode="tooth" data-modep="clin" aria-pressed="${!sm}" ${lk?"disabled":""}>Whole tooth</button></span></span>
+    <span class="note" style="margin:0">${sm?"Tooth code is derived from the surfaces: decay and filling → 2; decay → 1; filling → 3; sealant → 6; otherwise 0.":"One code per tooth. Choose “Surfaces” to record detail and compute DMFS."}</span></div>`
+   +(noSurf?`<div class="banner warn"><span>${noSurf} teeth have a code but no surface data (entered in Whole tooth mode). DMFS cannot be computed yet.</span></div>`:"")
+   +chartHTML("clin",c.c,{teeth:T32,set:WHO,kind:kindW,ro:lk,flags,uflag:true,wis:true,surf:sm?(c.s||{}):null});
+  const age=ageOf(cur);const C=idxWHO(c.c,T28,age);const n28=filled(c.c,T28),nw=filled(c.c,WIS);
+  const C32=nw===4?idxWHO(c.c,T32,age):null;
+  const S=idxS(c,age);
+  $("#khamDmft").innerHTML=dmftHTML(C,"cDMFT")+`<div class="dm"><b>${C32?C32.T:"–"}</b><span>cDMFT32</span></div><div class="dm"><b>${idxH(c.c).T}</b><span>hDMFT</span></div>`
+   +`<div class="dm" title="D surfaces · M surfaces · F surfaces"><b>${S.miss?"–":S.T}</b><span>cDMF-S${S.miss?"":` (${S.D}·${S.M}·${S.F})`}</span></div><div class="dm"><b>${S.miss?"–":S.HT}</b><span>hDMF-S</span></div>`;
+  const absent=T28.filter(t=>["4","5","8"].includes(c.c?.[t])).length;
+  const msg=n28<28?`Entered ${n28}/28 main teeth${nw<4?` · third molars ${nw}/4`:""}.`:absent>8?`<span style="color:var(--bad)">${absent} teeth absent: exceeds the exclusion limit (more than 8).</span>`:`All 28 teeth entered${nw<4?`; third molars ${nw}/4 (cDMFT32 not computed)`:""}. ${!cur.meta.tuoi?"Age not entered (M rule depends on age).":""}`;
+  $("#khamLock").innerHTML=lockHTML("clin","clinical exam",n28===28&&!!cur.id,msg,c.lock);
+  $("#refWHO").innerHTML=WHO.map(([c,l,d])=>`<div><b>${c}</b><span>${esc(l)}${d?` <span style="color:var(--muted)">· ${esc(d)}</span>`:""}</span></div>`).join("");
+}
+
+/* ---- 3. PHOTOS ---- */
+function photoURL(v,k){if(pending[k]?.url)return pending[k].url;if(!v)return"";if(v.asset)return"/_blob/"+v.asset;if(v.blob){if(!v.url)v.url=URL.createObjectURL(v.blob);return v.url;}return v.dataUrl||"";}
+function renderAnh(){
+  const lk=!!cur.photo.lock;const dev=cur.meta.device||"D?";
+  $("#photos").innerHTML=VIEWS.map(({k,l,en})=>{const v=cur.photo.views[k]||{};const url=photoURL(v,k);const shown=displayURL(v,k);const ed=isEdited(v.edit);const q=v.q||["","","",""];
+    const st=!url?`<span class="pill mute">No photo</span>`:!viewRated(v)?`<span class="pill warn">Not rated</span>`:viewPass(v)?`<span class="pill ok">Meets minimum</span>`:`<span class="pill bad">Below minimum</span>`;
+    return `<div class="slot"><div class="slot-h"><span><b>${l}</b> <span class="mono">${k}</span></span>${st}</div>
+     <div class="drop" data-drop="${k}" tabindex="0" role="button" aria-label="Choose photo ${l}">${url?`<img src="${esc(shown)}" alt="${esc(l)}">${ed?`<span class="edited-tag" title="${esc(editSummary(v.edit))}">Edited</span>`:""}`:`<div class="ph"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" style="display:block;margin:0 auto 6px;color:var(--accent)"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3.2"/><path d="M8 5l1.5-2h5L16 5"/></svg>Click or drag a photo here: ${esc(en)}</div>`}</div>
+     <div class="q4">${QCRIT.map((c,i)=>`<label for="q_${k}_${i}">${c}</label><select id="q_${k}_${i}" data-q="${k}" data-qi="${i}" ${lk?"disabled":""}><option value="">–</option><option value="0" ${q[i]==="0"?"selected":""}>0</option><option value="1" ${q[i]==="1"?"selected":""}>1</option><option value="2" ${q[i]==="2"?"selected":""}>2</option></select>`).join("")}
+      <label for="rt_${k}">Retakes</label><select id="rt_${k}" data-rt="${k}" ${lk?"disabled":""}>${[0,1,2].map(n=>`<option value="${n}" ${(+v.retakes||0)===n?"selected":""}>${n}</option>`).join("")}</select></div>
+     <div class="slot-f"><span class="meta">${url?`${esc(cur.id||"ID")}_${k}_${(+v.retakes||0)+1}_${esc(dev)} · ${esc(v.name||"")}${pending[k]?" · awaiting save":""}`:"SOP file name on export"}</span>
+      ${lk?"":`<button class="btn sm" type="button" data-pick="${k}">${url?"Replace photo":"Choose photo"}</button>${url?`<button class="btn sm" type="button" data-edit="${k}">Edit photo</button><button class="btn sm danger" type="button" data-del="${k}">Remove</button>`:""}`}
+      ${ed?`<span class="meta" style="color:var(--accent)">Edited: ${esc(editSummary(v.edit))}</span>`:""}
+      <input type="text" data-reason="${k}" placeholder="Retake reason (blur, glare, saliva…)" value="${esc(v.reason||"")}" ${lk?"disabled":""} style="flex:1 1 100%;padding:5px 8px;font-size:12px"></div></div>`;}).join("");
+  const s=photoState(cur);
+  $("#photoSummary").innerHTML=`<div class="row"><span class="pill ${s.has===5?"ok":"mute"}">${s.has}/5 photos</span><span class="pill ${s.pass===5?"ok":"mute"}">${s.pass}/5 views meet minimum</span>${s.noOut?`<span class="pill bad">No output: a view still fails after 2 retakes</span>`:""}</div>`;
+  const ok=s.has===5&&(s.pass===5||s.noOut)&&!!cur.id;
+  $("#anhLock").innerHTML=lockHTML("photo","final photo set",ok,s.has<5?`5 views needed (have ${s.has}).`:s.pass<5&&!s.noOut?"Some views are unrated or below minimum; retake or record 2 retakes.":s.noOut?"Photo set recorded as no output; this person stays in the denominator.":"Photo set complete. Lock it to release to readers and the AI.",cur.photo.lock);
+}
+
+/* ---- photo editing (non-destructive) ---- */
+const E0={rot:0,ang:0,fh:false,fv:false,crop:null,br:0,ct:0,sa:0,tp:0};
+const isEdited=e=>!!e&&(e.rot%4!==0||+e.ang!==0||e.fh||e.fv||!!e.crop||+e.br!==0||+e.ct!==0||+e.sa!==0||+e.tp!==0);
+function editSummary(e){if(!isEdited(e))return"";const a=[];const r=((e.rot%4)+4)%4;if(r)a.push(`rotated ${r*90}°`);if(+e.ang)a.push(`angle ${e.ang}°`);if(e.fh)a.push("flipped horizontally");if(e.fv)a.push("flipped vertically");
+  if(e.crop)a.push(`crop ${Math.round(e.crop.w*100)}×${Math.round(e.crop.h*100)}%`);[["br","brightness"],["ct","contrast"],["sa","saturation"],["tp","colour temperature"]].forEach(([k,l])=>{if(+e[k])a.push(`${l} ${e[k]>0?"+":""}${e[k]}`);});return a.join("; ");}
+const loadImg=url=>new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=()=>rej(new Error("Could not open the photo"));im.src=url;});
+function geomCanvas(img,e,maxDim){const iw=img.naturalWidth,ih=img.naturalHeight;const sc=Math.min(1,maxDim/Math.max(iw,ih));const w=Math.round(iw*sc),h=Math.round(ih*sc);
+  const a=((e.rot||0)*90+(+e.ang||0))*Math.PI/180;const cs=Math.abs(Math.cos(a)),sn=Math.abs(Math.sin(a));const W=Math.round(w*cs+h*sn),H=Math.round(w*sn+h*cs);
+  const c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");x.fillStyle="#000";x.fillRect(0,0,W,H);
+  x.translate(W/2,H/2);x.rotate(a);x.scale(e.fh?-1:1,e.fv?-1:1);x.imageSmoothingQuality="high";x.drawImage(img,-w/2,-h/2,w,h);return c;}
+function toneCanvas(c,e){if(!(+e.br||+e.ct||+e.sa||+e.tp))return c;const x=c.getContext("2d");const d=x.getImageData(0,0,c.width,c.height);const p=d.data;
+  const b=(+e.br||0)*2.55,cv=(+e.ct||0)*2.55,f=(259*(cv+255))/(255*(259-cv)),s=1+(+e.sa||0)/100,t=(+e.tp||0)*.6;
+  for(let i=0;i<p.length;i+=4){let r=p[i],g=p[i+1],bl=p[i+2];r=(r-128)*f+128+b;g=(g-128)*f+128+b;bl=(bl-128)*f+128+b;
+    const l=.299*r+.587*g+.114*bl;r=l+(r-l)*s+t;g=l+(g-l)*s;bl=l+(bl-l)*s-t;p[i]=r<0?0:r>255?255:r;p[i+1]=g<0?0:g>255?255:g;p[i+2]=bl<0?0:bl>255?255:bl;}
+  x.putImageData(d,0,0);return c;}
+function cropCanvas(c,cr){if(!cr)return c;const X=Math.round(cr.x*c.width),Y=Math.round(cr.y*c.height),W=Math.max(1,Math.round(cr.w*c.width)),H=Math.max(1,Math.round(cr.h*c.height));
+  const o=document.createElement("canvas");o.width=W;o.height=H;o.getContext("2d").drawImage(c,X,Y,W,H,0,0,W,H);return o;}
+function renderEdit(img,e,maxDim){return toneCanvas(cropCanvas(geomCanvas(img,e,maxDim),e.crop),e);}
+const edCache={};const edBusy={};
+function displayURL(v,k){const src=photoURL(v,k);if(!src||!isEdited(v?.edit))return src;const sig=JSON.stringify(v.edit)+"|"+src;
+  if(edCache[k]?.sig===sig)return edCache[k].url;
+  if(edBusy[k]!==sig){edBusy[k]=sig;loadImg(src).then(img=>new Promise(res=>renderEdit(img,v.edit,2000).toBlob(b=>res(b),"image/jpeg",.92))).then(b=>{if(edBusy[k]!==sig)return;if(edCache[k]?.url)URL.revokeObjectURL(edCache[k].url);edCache[k]={sig,url:URL.createObjectURL(b)};renderAll();}).catch(()=>{});}
+  return src;}
+let showOrig=false;
+let ED=null; // {k,img,e,crop:false,drag:null,base:null}
+async function openEditor(k){const v=cur.photo.views[k];const src=photoURL(v,k);if(!src){toast("No photo in this view yet.");return;}
+  try{busy("Opening photo…");const img=await loadImg(src);busy();ED={k,img,e:{...E0,...(v.edit||{})},crop:false,drag:null};
+    $("#edTitle").textContent="Edit photo · "+VIEWS.find(x=>x.k===k).l;$("#edm").hidden=false;edSync();edRender(true);}
+  catch(err){busy();toast(err.message,4000);}}
+function edSync(){["ang","br","ct","sa","tp"].forEach(n=>{$("#ed_"+n).value=ED.e[n];$("#o_"+n).textContent=(+ED.e[n]>0?"+":"")+ED.e[n];});
+  $("#edCropBtn").setAttribute("aria-pressed",ED.crop);$("#edCropBtn").classList.toggle("pri",ED.crop);
+  $("#edCropNote").textContent=ED.crop?"Drag with the mouse (or a finger) on the photo to choose the area to keep.":ED.e.crop?`Cropping: keeping ${Math.round(ED.e.crop.w*100)}% × ${Math.round(ED.e.crop.h*100)}% of the frame.`:"";
+  $("#edCanvas").classList.toggle("crop",ED.crop);}
+function edRender(geomChanged){if(!ED)return;if(geomChanged||!ED.base)ED.base=toneCanvas(geomCanvas(ED.img,ED.e,1100),ED.e);
+  const cv=$("#edCanvas");cv.width=ED.base.width;cv.height=ED.base.height;const x=cv.getContext("2d");x.drawImage(ED.base,0,0);
+  const cr=ED.drag||ED.e.crop;if(cr){const X=cr.x*cv.width,Y=cr.y*cv.height,W=cr.w*cv.width,H=cr.h*cv.height;x.fillStyle="rgba(0,0,0,.6)";
+    x.fillRect(0,0,cv.width,Y);x.fillRect(0,Y+H,cv.width,cv.height-Y-H);x.fillRect(0,Y,X,H);x.fillRect(X+W,Y,cv.width-X-W,H);
+    x.strokeStyle="#fff";x.lineWidth=Math.max(2,cv.width/400);x.setLineDash([8,6]);x.strokeRect(X,Y,W,H);}}
+let edRaf=0;const edSoon=g=>{cancelAnimationFrame(edRaf);edRaf=requestAnimationFrame(()=>edRender(g));};
+document.addEventListener("input",e=>{const n=e.target.dataset?.edr;if(!n||!ED)return;ED.e[n]=+e.target.value;$("#o_"+n).textContent=(ED.e[n]>0?"+":"")+ED.e[n];
+  if(n==="ang"&&ED.e.crop){ED.e.crop=null;edSync();}edSoon(true);});
+document.addEventListener("click",async e=>{const b=e.target.closest("[data-ed]");if(!b||!ED)return;const a=b.dataset.ed;const geo=()=>{if(ED.e.crop){ED.e.crop=null;toast("Crop removed because the orientation changed; crop again after rotating.");}};
+  if(a==="rl"){ED.e.rot=(ED.e.rot+3)%4;geo();}else if(a==="rr"){ED.e.rot=(ED.e.rot+1)%4;geo();}else if(a==="fh"){ED.e.fh=!ED.e.fh;geo();}else if(a==="fv"){ED.e.fv=!ED.e.fv;geo();}
+  else if(a==="crop"){ED.crop=!ED.crop;}else if(a==="nocrop"){ED.e.crop=null;ED.crop=false;}
+  else if(a==="reset"){ED.e={...E0};ED.crop=false;}
+  else if(a==="cancel"){ED=null;$("#edm").hidden=true;return;}
+  else if(a==="apply"){const k=ED.k;const v=cur.photo.views[k];cur.photo.views[k]={...v,edit:isEdited(ED.e)?{...ED.e,at:nowISO()}:null};ED=null;$("#edm").hidden=true;touch("photo");toast(isEdited(cur.photo.views[k].edit)?"Edit settings stored. Click Save to keep them.":"Photo uses the original.");return;}
+  edSync();edRender(["rl","rr","fh","fv","reset"].includes(a));});
+(()=>{const cv=$("#edCanvas");const pt=ev=>{const r=cv.getBoundingClientRect();return[Math.max(0,Math.min(1,(ev.clientX-r.left)/r.width)),Math.max(0,Math.min(1,(ev.clientY-r.top)/r.height))];};
+  cv.addEventListener("pointerdown",ev=>{if(!ED?.crop)return;ev.preventDefault();cv.setPointerCapture(ev.pointerId);ED.p0=pt(ev);ED.drag={x:ED.p0[0],y:ED.p0[1],w:0,h:0};});
+  cv.addEventListener("pointermove",ev=>{if(!ED?.p0)return;const [x,y]=pt(ev);const [x0,y0]=ED.p0;ED.drag={x:Math.min(x,x0),y:Math.min(y,y0),w:Math.abs(x-x0),h:Math.abs(y-y0)};edSoon(false);});
+  cv.addEventListener("pointerup",()=>{if(!ED?.p0)return;const d=ED.drag;ED.p0=null;ED.drag=null;if(d&&d.w>.03&&d.h>.03){ED.e.crop=d;ED.crop=false;}edSync();edRender(false);});})();
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&ED){ED=null;$("#edm").hidden=true;}},true);
+
+/* ---- photo viewer ---- */
+function viewerHTML(key){const k=viewK[key];const v=cur.photo.views?.[k];const ed=isEdited(v?.edit);const url=ed&&!showOrig?displayURL(v,k):photoURL(v,k);const meta=VIEWS.find(x=>x.k===k);
+  return `<div class="viewer"><div class="vimg" data-zoom="${key}">${url?`<img src="${esc(url)}" alt="${esc(meta.l)}">${ed?`<span class="edited-tag">${showOrig?"Original":"Edited"}</span>`:""}`:`<div class="empty">No photo ${esc(meta.l.toLowerCase())}</div>`}</div>
+   <div class="vtabs">${VIEWS.map(x=>`<button type="button" class="btn sm" data-view="${key}" data-vk="${x.k}" aria-pressed="${x.k===k}">${x.l}${isEdited(cur.photo.views?.[x.k]?.edit)?" ✎":""}</button>`).join("")}${ed?`<button type="button" class="btn sm" data-orig="1" aria-pressed="${showOrig}" title="${esc(editSummary(v.edit))}">${showOrig?"View edited version":"View original"}</button>`:""}</div></div>`;}
+
+/* ---- 4. AI ---- */
+function renderAi(){
+  const a=cur.ai;const lk=!!a.lock;
+  $("#aiViewer").innerHTML=viewerHTML("ai");
+  document.querySelectorAll("[data-ai]").forEach(el=>{if(el.type==="checkbox")el.checked=!!a[el.dataset.ai];else if(document.activeElement!==el)el.value=a[el.dataset.ai]??"";el.disabled=lk;});
+  $("#aiPaste").disabled=lk;$("#btnAiParse").disabled=lk;$("#btnAiFile").disabled=lk;
+  $("#aiChart").innerHTML=chartHTML("ai",a.c,{teeth:T28,set:PH,kind:kindP,ro:lk});
+  $("#aiDmft").innerHTML=dmftHTML(idxP(a.c),"pDMFT");
+  const n=filled(a.c,T28);
+  $("#aiLock").innerHTML=lockHTML("ai","AI output",(n===28||a.noOutput)&&!!cur.id,a.noOutput?"AI recorded as producing no output.":`Have ${n}/28 teeth.${!a.version?" Record the model version.":""}`,a.lock);
+}
+function parseAi(text){const out={};text=String(text||"").trim();if(!text)return out;
+  try{const j=JSON.parse(text);if(Array.isArray(j))j.forEach(o=>{const t=o.tooth??o.rang??o.fdi,c=o.code??o.ma;if(t!=null)out[String(t)]=String(c);});else Object.entries(j.teeth||j).forEach(([t,c])=>out[String(t)]=String(c));}
+  catch{text.split(/\r?\n/).forEach(l=>{const m=l.split(/[,;\t ]+/).filter(Boolean);if(m.length>=2&&/^\d\d$/.test(m[0]))out[m[0]]=m[1];});}
+  const ok={},bad=[];Object.entries(out).forEach(([t,c])=>{if(T28.includes(+t)&&PH.some(([x])=>x===c))ok[t]=c;else bad.push(`${t}:${c}`);});return{ok,bad};}
+
+/* ---- 5. PHOTO READING ---- */
+function renderDoc(){
+  const roles=[["r1","Reader 1"],["r2","Reader 2"],["arb","Adjudicator"]];
+  $("#readerRole").innerHTML=roles.map(([k,l])=>`<label class="pc" style="cursor:pointer;${role===k?"border-color:var(--accent);background:var(--accent-soft)":""}"><input type="radio" name="role" value="${k}" ${role===k?"checked":""} style="accent-color:var(--accent)">${l}${cur[k]?.lock?' <span class="pill ok" style="padding:1px 7px">locked</span>':""}</label>`).join("")
+   +`<div class="fld" style="max-width:180px"><label for="readerId" class="sr">Reader ID</label><input type="text" id="readerId" placeholder="Dentist ID, e.g. R1" value="${esc(cur[role]?.reader||"")}" ${cur[role]?.lock?"disabled":""}></div>`;
+  $("#docViewer").innerHTML=viewerHTML("doc");
+  const dis=disagree(cur);
+  if(role==="arb"){
+    const both=cur.r1?.lock&&cur.r2?.lock;const V=consensus(cur);
+    const ghost=T28.filter(t=>!dis.includes(t));
+    const kp=kappa(T28.filter(t=>cur.r1.c?.[t]&&cur.r2.c?.[t]).map(t=>[harmP(cur.r1.c[t]),harmP(cur.r2.c[t])]),["S","D","F","A","X"]);
+    $("#docChart").innerHTML=(!both?`<div class="banner warn"><span>The adjudicator works after both readers have locked.</span></div>`:"")
+     +`<div class="banner info"><span>${dis.length} teeth in disagreement (red outline). Teeth both readers coded the same are taken as the result. Agreement between the 2 readers: ${pct(kp.po)} · kappa ${fmt(kp.k)}.</span></div>`
+     +(both?chartHTML("arb",Object.fromEntries(T28.map(t=>[t,V[t]??""])),{teeth:T28,set:PH,kind:kindP,ro:!!cur.arb.lock,ghost,nofill:true,ring:dis.filter(t=>!cur.arb.c?.[t])}):"")
+     +(both&&dis.length?`<div class="tbwrap" style="margin-top:10px"><table class="tb"><thead><tr><th>Tooth</th><th>Reader 1</th><th>Reader 2</th><th>Adjudicator</th></tr></thead><tbody>${dis.map(t=>`<tr><td class="mono">${t}</td><td class="mono">${cur.r1.c[t]}${surfStr(cur.r1,t)?` <span class="note">(${esc(surfStr(cur.r1,t))})</span>`:""}</td><td class="mono">${cur.r2.c[t]}${surfStr(cur.r2,t)?` <span class="note">(${esc(surfStr(cur.r2,t))})</span>`:""}</td><td class="mono">${cur.arb.c?.[t]??"–"}</td></tr>`).join("")}</tbody></table></div>`:"");
+    $("#docDmft").innerHTML=both?dmftHTML(idxP(V),"vDMFT"):"";
+    const resolved=dis.every(t=>cur.arb.c?.[t]);
+    $("#docLock").innerHTML=lockHTML("arb","consensus vDMFT",both&&resolved&&!!cur.id,!both?"Waiting for both readers to lock.":resolved?"All disagreements resolved.":`${dis.filter(t=>!cur.arb.c?.[t]).length} teeth waiting for the adjudicator.`,cur.arb.lock);
+  } else {
+    const r=cur[role];const other=role==="r1"?"r2":"r1";
+    const hideOther=blinded();
+    $("#docChart").innerHTML=(hideOther?"":`<div class="banner warn"><span>Blinding is off: red outline marks teeth that differ from ${role==="r1"?"reader 2":"reader 1"}.</span></div>`)
+     +modeBar(role)
+     +chartHTML(role,r.c,{teeth:T28,set:PH,kind:kindP,ro:!!r.lock,surf:r.mode==="surf"?(r.s||{}):null,ring:hideOther?[]:T28.filter(t=>r.c?.[t]&&cur[other].c?.[t]&&r.c[t]!==cur[other].c[t])});
+    const RS=idxS(r,ageOf(cur),role);
+    $("#docDmft").innerHTML=dmftHTML(idxP(r.c),role==="r1"?"Read 1":"Read 2")+(r.mode==="surf"?`<div class="dm"><b>${RS.miss?"–":RS.T}</b><span>DMF-S${RS.miss?"":` (${RS.D}·${RS.M}·${RS.F})`}</span></div>`:"");
+    const n=filled(r.c,T28);
+    $("#docLock").innerHTML=lockHTML(role,role==="r1"?"reading 1":"reading 2",n===28&&!!cur.id,`Read ${n}/28 teeth.${!cur.photo.lock?" Photo set not locked.":""}`,r.lock);
+  }
+}
+
+function modeBar(ch){const p=cur[ch];const sm=p.mode==="surf";const lk=!!p.lock;
+  return `<div class="row" style="justify-content:space-between;margin-bottom:10px"><span class="row"><span class="note" style="margin:0">Enter by</span><span class="modeseg" role="group" aria-label="Entry mode"><button type="button" data-mode="surf" data-modep="${ch}" aria-pressed="${sm}" ${lk?"disabled":""}>Surfaces</button><button type="button" data-mode="tooth" data-modep="${ch}" aria-pressed="${!sm}" ${lk?"disabled":""}>Whole tooth</button></span></span>
+   <span class="note" style="margin:0;max-width:52ch">${sm?"Code 9 for a surface not visible in the photo. Tooth code is derived: decay and filling → 2; decay → 1; filling → 3; all surfaces 9 → 9; otherwise 0.":"One code per tooth, like pDMFT-AI. Choose “Surfaces” to code each surface."}</span></div>`;}
+
+/* ---- 6. COMPARISON ---- */
+function renderCmp(){
+  const r=cur;const tr=triple(r);
+  if(!tr&&blinded()){
+    const miss=[!r.clin?.lock&&"clinical exam",!vLocked(r)&&"photo reading (consensus)",!r.ai?.lock&&"AI"].filter(Boolean);
+    $("#cmpOne").innerHTML=`<div class="panel" style="text-align:center;padding:30px"><div style="font-size:30px">🔒</div><h3 style="margin-top:6px">Comparison not yet available for ${esc(r.id||"this record")}</h3><p class="note" style="margin:6px auto">Waiting to lock: ${miss.join(", ")}. The linking table opens only after all three outputs are locked, so no one can adjust a result to match another measurement.</p></div>`;
+  } else {
+    const age=ageOf(r);const C=tr?.C||idxWHO(r.clin.c,T28,age),H=tr?.H||idxH(r.clin.c);const Vc=tr?.Vc||consensus(r);
+    const V=tr?tr.V:idxP(Vc),A=tr?tr.A:idxP(r.ai.c);
+    const card=(lab,sub,x,col,ref)=>`<div class="mcard" style="--c:var(${col})"><div class="lab">${lab}</div><div class="big">${x?x.T:"—"}</div><div class="parts">${x?`D ${x.D} · M ${x.M} · F ${x.F}`:"No output"}</div><div class="note" style="margin:4px 0 0">${sub}</div>${ref&&x?`<div class="delta">Versus clinical: <b style="color:var(${col})">${sgn(x.T-C.T,0)}</b> teeth · versus hDMFT: <b>${sgn(x.T-H.T,0)}</b></div>`:""}</div>`;
+    const dV=V?V.T-C.T:null,dA=A?A.T-C.T:null;const dd=V&&A?Math.abs(dA)-Math.abs(dV):null;
+    const rows=[["Clinical (C)",T=>harmW(r.clin.c?.[T]),T=>r.clin.c?.[T],kindW],["Photo reading (V)",T=>harmP(Vc[T]),T=>Vc[T],kindP],["AI (A)",T=>harmP(r.ai.c?.[T]),T=>r.ai.c?.[T],kindP]];
+    const cell=(i,T)=>{const rw=rows[i];const h=rw[1](T),c=rw[2](T)??"";const ref=i?rows[0][1](T):"";const mis=i&&h&&ref&&h!==ref&&h!=="X"&&ref!=="X";const k=c?rw[3](c):"";return `<td class="${k?"k-"+k:""}${mis?" mis":""}" title="Tooth ${T}: code ${c||"–"}">${c?esc(c):""}</td>`;};
+    const half=(arr,i)=>arr.filter(t=>T28.includes(t)).map(T=>cell(i,T)).join("");
+    const tbl=(up)=>`<table class="cmp"><tr><th></th>${(up?[...U8,...U8R]:[...L8,...L8R]).filter(t=>T28.includes(t)).map((t,j)=>`${j===7?'<th class="gap"></th>':""}<th>${t}</th>`).join("")}</tr>${rows.map((rw,i)=>`<tr><th class="rl">${rw[0]}</th>${half(up?U8:L8,i)}<td class="gap"></td>${half(up?U8R:L8R,i)}</tr>`).join("")}</table>`;
+    const pairs=(f)=>T28.map(t=>[harmW(r.clin.c?.[t]),f(t)]).filter(([a,b])=>a&&b&&a!=="X"&&b!=="X");
+    const kV=kappa(pairs(t=>harmP(Vc[t])),["S","D","F","A"]),kA=kappa(pairs(t=>harmP(r.ai.c?.[t])),["S","D","F","A"]);
+    $("#cmpOne").innerHTML=(!tr?`<div class="banner warn"><span>Blinding is off and not all three parts are locked: the figures below are a preview only.</span></div>`:"")
+     +`<div class="cards3">${card("cDMFT · clinical","WHO 2013 reference standard, 28 teeth",C,"--mC",false)}${card("vDMFT · photo reading","Consensus of 2 dentists + adjudicator",V,"--mV",true)}${card("pDMFT · AI","pDMFT-AI on the same photo set",A,"--mA",true)}</div>
+     <div class="stat" style="margin-top:12px">
+      <div class="st"><div class="v">${sgn(dV,0)}</div><div class="l">V − C (teeth)</div></div>
+      <div class="st"><div class="v">${sgn(dA,0)}</div><div class="l">A − C (teeth)</div></div>
+      <div class="st"><div class="v">${sgn(dd,0)}</div><div class="l">|A − C| − |V − C| (H3)</div></div>
+      <div class="st"><div class="v">${H.T}</div><div class="l">hDMFT (M = all absent teeth) · if U is treated as code 4: cDMFT ${C.D+idxU(r.clin.c,r.clin.u)+C.F}</div></div>
+      <div class="st"><div class="v">${pct(kV.po)}</div><div class="l">Tooth-level agreement V/C · kappa ${fmt(kV.k)}</div></div>
+      <div class="st"><div class="v">${pct(kA.po)}</div><div class="l">Tooth-level agreement A/C · kappa ${fmt(kA.k)}</div></div></div>
+     <h2>Tooth-by-tooth comparison</h2>
+     <div class="cmp-scroll">${tbl(true)}<div style="height:10px"></div>${tbl(false)}</div>
+     <div class="legend"><span><i class="k-D"></i>Decayed (1, 2)</span><span><i class="k-F"></i>Filled (3)</span><span><i class="k-M"></i>Absent (clinical code 4; photo code 4)</span><span><i class="k-A"></i>Absent for other reasons or unerupted (clinical 5, 8)</span><span><i class="k-X"></i>Not counted (7, 9)</span><span><i class="mis"></i>Differs from clinical (by group S, D, F, absent)</span></div>
+     <p class="note">For tooth-level comparison, clinical codes 4, 5, 8 all count as “absent”, because photos cannot tell why a tooth is missing (pDMFT convention).</p>`+lesionTable(r,Vc);
+  }
+  renderAgg();
+}
+function simRecs(n){let sd=20261103;const rnd=()=>{sd=(sd*1103515245+12345)%2147483648;return sd/2147483648;};const out=[];
+  for(let i=0;i<n;i++){const r=blank();r.id="SIM-"+i;const at={at:"sim"};const v={},a={};const pD=.04+rnd()*.12;
+    const cl={c:{},u:{},s:{},mode:"surf",lock:at};const loc={};
+    T32.forEach(t=>{const u=rnd();const post=t%10>=4;
+      if(WIS.includes(t)&&u<.5){applyWhole(cl,t,"8");return;}
+      if(!WIS.includes(t)&&u>=pD+.05&&u<pD+.065){applyWhole(cl,t,"4");return;}
+      if(!WIS.includes(t)&&u>=pD+.065&&u<pD+.07){applyWhole(cl,t,"5");return;}
+      surfOf(t).forEach(k=>applySurf(cl,t,k,"0"));
+      if(!WIS.includes(t)&&u<pD){const w=rnd();const L=post?(w<.5?"O":w<.85?"P":"S"):(w<.6?"P":"S");loc[t]=L;applySurf(cl,t,L==="O"?"Nhai":L==="P"?(rnd()<.5?"G":"X"):(rnd()<.6?"N":"T"),"1");}
+      else if(!WIS.includes(t)&&u<pD+.05)applySurf(cl,t,post?"Nhai":"G","3");});
+    const c=cl.c;const ph=x=>["4","5","8"].includes(x)?"4":x;const mV={O:.12,P:.45,S:.15},mA={O:.15,P:.5,S:.2};
+    T28.forEach(t=>{const tr=ph(c[t]);let y=tr,z=tr;const u=rnd(),w=rnd();
+      if(tr==="1"&&u<mV[loc[t]])y="0";else if(tr==="0"&&u<.025)y="1";else if(tr==="3"&&u<.12)y="0";
+      if(tr==="1"&&w<mA[loc[t]])z="0";else if(tr==="0"&&w<.035)z="1";else if(tr==="3"&&w<.18)z="0";else if(w>.995)z="9";v[t]=y;a[t]=z;});
+    r.meta={tuoi:String(18+Math.floor(rnd()*8))};r.clin=cl;r.r1={c:v,lock:at};r.r2={c:v,lock:at};r.arb={c:{},lock:at};r.ai={c:a,lock:at};r.photo={views:{}};out.push(r);}
+  return out;}
+function lesionTable(r,Vc){const dT=T28.filter(t=>["1","2"].includes(r.clin.c?.[t]));
+  if(!dT.length)return `<h2>Teeth decayed at the clinical exam, by surface</h2><p class="note">No decayed teeth at the clinical exam.</p>`;
+  const yes=x=>harmP(x)==="D"?`<span class="pill ok">Seen (${esc(x)})</span>`:x?`<span class="pill bad">Missed (${esc(x)})</span>`:`<span class="pill mute">–</span>`;
+  return `<h2>Teeth decayed at the clinical exam, by surface</h2><p class="note">Photos do not show the mesial and distal surfaces of posterior teeth; this table shows where missed lesions are.</p>
+   <div class="tbwrap"><table class="tb"><thead><tr><th>Tooth</th><th>Clinical code</th><th>Decayed surfaces</th><th>Location</th><th>Reader 1 surfaces</th><th>Reader 2 surfaces</th><th>Photo reading (consensus)</th><th>AI</th></tr></thead><tbody>${dT.map(t=>{const s=r.clin.s?.[t]||{};
+     const rd=k=>{const p=r[k];if(!p?.s?.[t])return `<span class="note">${p?.c?.[t]?"by tooth: "+esc(p.c[t]):"–"}</span>`;const L=locOf(p,t),Lc=locOf(r.clin,t);const ds=surfOf(t).filter(x=>p.s[t][x]==="1"||p.s[t][x]==="2").map(x=>SLAB[x].replace(" ",""));
+       return ds.length?`${esc(ds.join(", "))} ${L===Lc?'<span class="pill ok">same location</span>':'<span class="pill warn">different location</span>'}`:'<span class="pill bad">no decay recorded</span>';};
+     const ms=surfOf(t).filter(k=>s[k]==="1"||s[k]==="2").map(k=>SLAB[k].replace(" ","")).join(", ")||"–";
+     return `<tr><td class="mono">${t}</td><td class="mono">${esc(r.clin.c[t])}</td><td>${esc(ms)}</td><td>${LOCL[locOf(r.clin,t)]}</td><td>${rd("r1")}</td><td>${rd("r2")}</td><td>${yes(Vc[t])}</td><td>${yes(r.ai.c?.[t])}</td></tr>`;}).join("")}</tbody></table></div>`;}
+function renderAgg(){
+  let recs=allIds().map(getRec).filter(r=>!r.demo);
+  let sim=false;if(cur?.demo&&!recs.some(r=>triple(r))){recs=simRecs(60);sim=true;}
+  const done=recs.map(r=>({r,t:triple(r)})).filter(x=>x.t);
+  const pairs=done.filter(x=>x.t.V&&x.t.A);
+  const el=$("#cmpAll");
+  const noV=done.filter(x=>!x.t.V).length,noA=done.filter(x=>!x.t.A).length;
+  if(!pairs.length){el.innerHTML=`<div class="panel empty">Nobody has all three measurements locked yet. When they do, the H1–H3 monitoring table and the Bland–Altman plot appear here.<br><span class="note">${recs.length} records · ${done.length} fully locked</span></div>`;return;}
+  const dV=pairs.map(x=>x.t.V.T-x.t.C.T),dA=pairs.map(x=>x.t.A.T-x.t.C.T),dM=pairs.map(x=>Math.abs(x.t.A.T-x.t.C.T)-Math.abs(x.t.V.T-x.t.C.T));
+  const sV=msd(dV),sA=msd(dA),sM=msd(dM);const n=pairs.length;
+  const tcrit=n>1?tq(1-ALPHA,n-1):NaN;
+  const ci=s=>[s.m-tcrit*s.sd/Math.sqrt(s.n),s.m+tcrit*s.sd/Math.sqrt(s.n)];
+  const cV=ci(sV),cA=ci(sA),cM=ci(sM);
+  const maeV=msd(dV.map(Math.abs)).m,maeA=msd(dA.map(Math.abs)).m;
+  // tooth-level pooled
+  let tp={V:[0,0,0,0],A:[0,0,0,0]};// TP FN FP TN for D
+  const kp={V:[],A:[]};
+  pairs.forEach(({r,t})=>T28.forEach(T=>{const c=harmW(r.clin.c?.[T]);if(!c||c==="X")return;
+    [["V",harmP(t.Vc[T])],["A",harmP(r.ai.c?.[T])]].forEach(([k,p])=>{if(!p||p==="X")return;kp[k].push([c,p]);
+      if(c==="A"||p==="A")return;const pos=c==="D",ppos=p==="D";tp[k][pos?(ppos?0:1):(ppos?2:3)]++;});}));
+  const se=a=>a[0]/(a[0]+a[1]),sp=a=>a[3]/(a[2]+a[3]);
+  const byLoc={};["O","P","S","?"].forEach(k=>byLoc[k]={n:0,V:0,A:0});
+  pairs.forEach(({r,t})=>T28.forEach(T=>{if(!["1","2"].includes(r.clin.c?.[T]))return;const L=locOf(r.clin,T);const vv=t.Vc[T],aa=r.ai.c?.[T];if(!vv||!aa||vv==="9"||aa==="9")return;
+    byLoc[L].n++;if(harmP(vv)==="D")byLoc[L].V++;if(harmP(aa)==="D")byLoc[L].A++;}));
+  const kVp=kappa(kp.V,["S","D","F","A"]),kAp=kappa(kp.A,["S","D","F","A"]);
+  const ciSvg=(lo,hi,m,lim,lab,ni)=>{const W=600,H=44,mn=-1.2,mx=1.2,X=v=>20+(Math.max(mn,Math.min(mx,v))-mn)/(mx-mn)*(W-40);
+    return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${lab}"><rect x="${ni?X(-1.2):X(-lim)}" y="8" width="${ni?X(lim)-X(-1.2):X(lim)-X(-lim)}" height="18" fill="var(--ok-soft)"/>
+     <line x1="${X(0)}" y1="4" x2="${X(0)}" y2="30" stroke="var(--line)" stroke-width="1.5"/>${[-1,-.5,0,.5,1].map(v=>`<text x="${X(v)}" y="42" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="JetBrains Mono,monospace">${fmt(v,1)}</text>`).join("")}
+     <line x1="${X(lo)}" y1="17" x2="${X(hi)}" y2="17" stroke="var(--fg)" stroke-width="2.5"/><line x1="${X(lo)}" y1="11" x2="${X(lo)}" y2="23" stroke="var(--fg)" stroke-width="2"/><line x1="${X(hi)}" y1="11" x2="${X(hi)}" y2="23" stroke="var(--fg)" stroke-width="2"/><circle cx="${X(m)}" cy="17" r="5" fill="var(--accent)"/></svg>`;};
+  const pill=ok=>n<2?`<span class="pill mute">Not enough data</span>`:ok?`<span class="pill ok">Within margin</span>`:`<span class="pill warn">Not yet within margin</span>`;
+  const conf=(100*(1-2*ALPHA)).toFixed(2);
+  // Bland–Altman
+  const W=640,H=300,pl=44,pr=14,pt=14,pb=38;
+  const ptsV=pairs.map(x=>[(x.t.V.T+x.t.C.T)/2,x.t.V.T-x.t.C.T]),ptsA=pairs.map(x=>[(x.t.A.T+x.t.C.T)/2,x.t.A.T-x.t.C.T]);
+  const all=[...ptsV,...ptsA];const xmax=Math.max(4,Math.ceil(Math.max(...all.map(p=>p[0]))+1));
+  const loa=s=>[s.m-1.96*s.sd,s.m+1.96*s.sd];const lA=loa(sA),lV=loa(sV);
+  const ymaxAbs=Math.max(3,Math.ceil(Math.max(...all.map(p=>Math.abs(p[1])),...[lA[0],lA[1],lV[0],lV[1]].filter(isFinite).map(Math.abs))+.5));
+  const X=v=>pl+v/xmax*(W-pl-pr),Y=v=>pt+(ymaxAbs-v)/(2*ymaxAbs)*(H-pt-pb);
+  const yt=[];for(let v=-ymaxAbs;v<=ymaxAbs;v+=ymaxAbs>6?2:1)yt.push(v);const xt=[];for(let v=0;v<=xmax;v+=xmax>12?4:2)xt.push(v);
+  const jit=(i)=>((i*7919)%11-5)/30;
+  const hl=(v,col,dash,lab,left)=>isFinite(v)?`<line x1="${pl}" x2="${W-pr}" y1="${Y(v)}" y2="${Y(v)}" stroke="${col}" stroke-width="1.5" ${dash?'stroke-dasharray="5 4"':""}/><text x="${left?pl+4:W-pr-2}" y="${Y(v)+(left?12:-4)}" text-anchor="${left?"start":"end"}" font-size="10" fill="${col}" font-family="JetBrains Mono,monospace">${lab} ${fmt(v)}</text>`:"";
+  const ba=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Bland–Altman plot">
+   ${yt.map(v=>`<line x1="${pl}" x2="${W-pr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="${v===0?1.5:.7}"/><text x="${pl-6}" y="${Y(v)+3}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="JetBrains Mono,monospace">${v}</text>`).join("")}
+   ${xt.map(v=>`<text x="${X(v)}" y="${H-pb+14}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="JetBrains Mono,monospace">${v}</text>`).join("")}
+   <text x="${(pl+W-pr)/2}" y="${H-6}" text-anchor="middle" font-size="11" fill="var(--muted)">Mean of the two measurements (teeth)</text>
+   <text x="12" y="${(pt+H-pb)/2}" text-anchor="middle" font-size="11" fill="var(--muted)" transform="rotate(-90 12 ${(pt+H-pb)/2})">Photo − Clinical (teeth)</text>
+   ${hl(sA.m,"var(--mA)",false,"A mean")}${n>2?hl(lA[0],"var(--mA)",true,"A −1.96 SD")+hl(lA[1],"var(--mA)",true,"A +1.96 SD"):""}${hl(sV.m,"var(--mV)",false,"V mean",true)}
+   ${ptsV.map((p,i)=>`<circle cx="${X(p[0])+jit(i)*8}" cy="${Y(p[1])+jit(i+3)*8}" r="4" fill="none" stroke="var(--mV)" stroke-width="1.6"/>`).join("")}
+   ${ptsA.map((p,i)=>`<circle cx="${X(p[0])+jit(i+5)*8}" cy="${Y(p[1])+jit(i+1)*8}" r="3.6" fill="var(--mA)" fill-opacity=".8"/>`).join("")}</svg>`;
+  el.innerHTML=(sim?`<div class="banner warn"><span><b>Simulated data for 60 people</b> to show what the monitoring table looks like. Once real records are fully locked, the table uses real data.</span></div>`:"")+`<div class="stat">
+    <div class="st"><div class="v">${n}</div><div class="l">People with all 3 measurements</div></div>
+    <div class="st"><div class="v">${noV} / ${noA}</div><div class="l">No output: photos / AI (still in the denominator)</div></div>
+    <div class="st"><div class="v">${fmt(maeV)} / ${fmt(maeA)}</div><div class="l">MAE: photo reading / AI (teeth)</div></div>
+    <div class="st"><div class="v">${pct(se(tp.V))} · ${pct(sp(tp.V))}</div><div class="l">Photo reading: Se · Sp for decayed teeth</div></div>
+    <div class="st"><div class="v">${pct(se(tp.A))} · ${pct(sp(tp.A))}</div><div class="l">AI: Se · Sp for decayed teeth</div></div>
+    <div class="st"><div class="v">${fmt(kVp.k)} / ${fmt(kAp.k)}</div><div class="l">Tooth-level kappa: V / A versus clinical</div></div></div>
+   <h3 style="margin-top:18px">Hypotheses · ${conf}% confidence interval (α = 0.05/3 per side)</h3>
+   <div class="hyp">
+    <div class="hy"><div class="t">H1 · Equivalence of V − C within ±0.5 teeth<small>Mean ${sgn(sV.m)} · CI ${fmt(cV[0])} to ${fmt(cV[1])} · SD ${fmt(sV.sd)}</small></div>${pill(cV[0]>-MARGIN&&cV[1]<MARGIN)}<div class="ci">${n>1?ciSvg(cV[0],cV[1],sV.m,MARGIN,"H1"):""}</div></div>
+    <div class="hy"><div class="t">H2 · Equivalence of A − C within ±0.5 teeth<small>Mean ${sgn(sA.m)} · CI ${fmt(cA[0])} to ${fmt(cA[1])} · SD ${fmt(sA.sd)}</small></div>${pill(cA[0]>-MARGIN&&cA[1]<MARGIN)}<div class="ci">${n>1?ciSvg(cA[0],cA[1],sA.m,MARGIN,"H2"):""}</div></div>
+    <div class="hy"><div class="t">H3 · AI non-inferior to photo reading: ΔMAE &lt; 0.25<small>Mean |A−C| − |V−C| = ${sgn(sM.m)} · upper bound ${fmt(cM[1])}</small></div>${pill(cM[1]<NI)}<div class="ci">${n>1?ciSvg(cM[0],cM[1],sM.m,NI,"H3",true):""}</div></div>
+   </div>
+   <p class="note">The green band is the equivalence margin (H1, H2) or the non-inferiority region (H3). Planned sample: 910 analysed participants. The main analysis requires the SAP, Holm adjustment and sensitivity analyses.</p>
+   <h3 style="margin-top:18px">Sensitivity by lesion location (teeth decayed at the clinical exam)</h3>
+   <div class="tbwrap"><table class="tb"><thead><tr><th>Location of decayed surface</th><th>Teeth</th><th>Photo reading detected</th><th>AI detected</th></tr></thead><tbody>${["O","P","S","?"].filter(k=>byLoc[k].n||k!=="?").map(k=>{const b=byLoc[k];return `<tr><td>${LOCL[k]}</td><td class="num">${b.n}</td><td class="num">${b.n?pct(b.V/b.n):"–"}</td><td class="num">${b.n?pct(b.A/b.n):"–"}</td></tr>`;}).join("")}</tbody></table></div>
+   <p class="note">Teeth with mesial or distal decay are classed as “proximal” even if other surfaces are also decayed. Clinical data must be entered by surface for this table.</p>
+   <h3 style="margin-top:18px">Bland–Altman</h3>
+   <div class="svgbox">${ba}<div class="legend" style="margin:4px 8px"><span><svg width="12" height="12" style="vertical-align:-2px;margin-right:5px"><circle cx="6" cy="6" r="4" fill="none" stroke="var(--mV)" stroke-width="1.6"/></svg>Photo reading − clinical</span><span><svg width="12" height="12" style="vertical-align:-2px;margin-right:5px"><circle cx="6" cy="6" r="4" fill="var(--mA)"/></svg>AI − clinical (dashed: limits of agreement)</span></div></div>`;
+}
+
+/* ---- LIST ---- */
+function allIds(){const ids=new Set();PARTS.forEach(p=>store[p].forEach((_,k)=>ids.add(k)));return [...ids].sort((a,b)=>a.localeCompare(b,"vi",{numeric:true}));}
+function getRec(did){const r=blank();PARTS.forEach(p=>{const d=store[p].get(did);if(d)r[p]=JSON.parse(JSON.stringify(d));});
+  r.meta=r.meta||{};r.id=store.meta.get(did)?.id||PARTS.map(p=>store[p].get(did)?.id).find(Boolean)||did;
+  ["clin","ai","r1","r2","arb"].forEach(p=>{r[p].c=r[p].c||{};});r.clin.u=r.clin.u||{};r.clin.s=r.clin.s||{};r.clin.mode=r.clin.mode||"tooth";["r1","r2"].forEach(k=>{r[k].s=r[k].s||{};r[k].mode=r[k].mode||"tooth";});r.photo.views=r.photo.views||{};return r;}
+function renderList(){
+  const q=($("#search").value||"").toLowerCase();const ids=allIds().filter(i=>!q||i.toLowerCase().includes(q));
+  if(!ids.length){$("#list").innerHTML=`<div class="empty">No records yet. Click <b>+ New record</b>, enter the ID in step 1, then click <b>Save</b>. To see how it works, click <b>View example record</b>.</div>`;return;}
+  $("#list").innerHTML=`<table class="tb"><thead><tr><th>ID</th><th>Date</th><th>Age</th><th>Progress (6 steps)</th><th>Updated</th><th></th></tr></thead><tbody>${ids.map(did=>{const r=getRec(did);const st=stepState(r);
+    const up=PARTS.map(p=>r[p]?.updatedAt).filter(Boolean).sort().pop();
+    return `<tr class="${cur?.id&&docId(cur.id)===did?"cur":""}"><td class="mono">${esc(r.id)}</td><td>${esc(r.meta.ngay||"")}</td><td class="num">${esc(r.meta.tuoi||"")}</td>
+     <td><span class="dots" title="ID · Clinical · Photos · AI · Photo reading · Comparison">${STEPS.map(s=>`<i class="${st[s.k]==="lock"?"l":st[s.k]==="part"?"p":""}"></i>`).join("")}</span></td>
+     <td>${when(up)}</td><td><div class="row" style="flex-wrap:nowrap"><button class="btn sm" data-open="${esc(did)}" type="button">Open</button><button class="btn sm danger" data-rm="${esc(did)}" type="button">Delete</button></div></td></tr>`;}).join("")}</tbody></table>`;
+}
+
+function renderAll(){
+  if(!cur)return;renderSteps();renderBanner();
+  ({ma:renderMa,kham:renderKham,anh:renderAnh,ai:renderAi,doc:renderDoc,sosanh:renderCmp,ds:renderList,hd:()=>{}})[tab]?.();
+  const i=STEPS.findIndex(s=>s.k===tab);$("#btnPrev").disabled=i<=0;$("#btnNext").disabled=i<0||i>=STEPS.length-1;
+}
+
+/* ================= EVENTS ================= */
+function touch(part){if(cur.demo){renderAll();return;}dirty.add(part);renderAll();}
+document.addEventListener("click",async e=>{
+  const b=e.target.closest("button,[data-drop],[data-zoom]");if(!b)return;
+  if(b.dataset.go){showTab(b.dataset.go);return;}
+  if(b.dataset.mode){const ch=b.dataset.modep||"clin";if(cur[ch].lock)return;cur[ch].mode=b.dataset.mode;sel=null;touch(ch);return;}
+  if(b.dataset.surf){selS=b.dataset.surf;renderAll();return;}
+  if(b.dataset.scode!==undefined){surfCode(b.dataset.scode);return;}
+  if(b.dataset.wcode){wholeCode(b.dataset.wcode);return;}
+  if(b.dataset.allsound||b.dataset.allnine){if(!sel)return;const ch=sel.chart,v=b.dataset.allnine?"9":"0";surfOf(sel.t).forEach(k=>applySurf(partOf(ch),sel.t,k,v,ch));touch(ch);return;}
+  if(b.dataset.clrtooth){if(!sel)return;const p=partOf(sel.chart);delete p.c[sel.t];if(p.s)delete p.s[sel.t];if(p.u)delete p.u[sel.t];touch(sel.chart);return;}
+  if(b.dataset.fill0s){const ch=b.dataset.fill0s,p=partOf(ch);T28.forEach(t=>{if(wholeOf(ch,p.c[t]))return;if(p.c[t]&&!p.s?.[t])return;surfOf(t).forEach(k=>{if(p.s?.[t]?.[k]===undefined)applySurf(p,t,k,"0",ch);});});touch(ch);return;}
+  if(b.dataset.chart&&b.dataset.t){const ch=b.dataset.chart,t=+b.dataset.t;if(b.classList.contains("ghost")||b.classList.contains("dis"))return;sel={chart:ch,t};if(surfModeOf(ch))selS=firstEmptySurf(ch,t);renderAll();
+    requestAnimationFrame(()=>document.querySelector(`[data-chart="${ch}"][data-t="${t}"]`)?.focus());return;}
+  if(b.dataset.chartp!==undefined&&b.dataset.code!==undefined){setCode(b.dataset.chartp,b.dataset.code);return;}
+  if(b.dataset.uflag){const t=sel?.t;if(!t)return;cur.clin.u=cur.clin.u||{};cur.clin.u[t]=!cur.clin.u[t];touch("clin");return;}
+  if(b.dataset.fill0||b.dataset.fill8){const ch=b.dataset.fill0||b.dataset.fill8;const v=b.dataset.fill0?"0":"8";const p=partOf(ch);const teeth=v==="8"?WIS:(ch==="clin"?T28:T28);
+    teeth.forEach(t=>{if(!p.c[t])p.c[t]=v;});touch(ch==="arb"?"arb":ch);return;}
+  if(b.dataset.lock){await doLock(b.dataset.lock);return;}
+  if(b.dataset.unlock){const r=await ask("Unlock this part? Every unlock is recorded in the audit log with its reason.","Unlock",true);if(!r)return;
+    const p=cur[b.dataset.unlock];p.log=[...(p.log||[]),{at:nowISO(),unlock:p.lock?.at,reason:r}];delete p.lock;dirty.add(b.dataset.unlock);await save();return;}
+  if(b.dataset.drop){if(cur.photo.lock)return;pickPhoto(b.dataset.drop);return;}
+  if(b.dataset.pick){pickPhoto(b.dataset.pick);return;}
+  if(b.dataset.del){const k=b.dataset.del;if(pending[k]?.url)URL.revokeObjectURL(pending[k].url);delete pending[k];const v=cur.photo.views[k];if(v?.asset){cur.photo.removed=[...(cur.photo.removed||[]),v.asset];}
+    cur.photo.views[k]={...(v||{}),asset:null,blob:null,dataUrl:null,local:null,name:""};touch("photo");return;}
+  if(b.dataset.view){viewK[b.dataset.view]=b.dataset.vk;renderAll();return;}
+  if(b.dataset.edit){if(cur.photo.lock)return;openEditor(b.dataset.edit);return;}
+  if(b.dataset.orig){showOrig=!showOrig;renderAll();return;}
+  if(b.dataset.zoom){b.classList.toggle("zoom");return;}
+  if(b.dataset.newrec){newRec();return;}
+  if(b.dataset.demo){$("#btnDemo").click();return;}
+  if(b.dataset.open){openRec(b.dataset.open);return;}
+  if(b.dataset.rm){delRec(b.dataset.rm);return;}
+});
+function partOf(ch){return ch==="clin"?cur.clin:cur[ch];}
+const surfModeOf=ch=>SURFCH.includes(ch)&&cur[ch]?.mode==="surf";
+function firstEmptySurf(ch,t){const s=partOf(ch).s?.[t]||{};return surfOf(t).find(k=>s[k]===undefined)||surfOf(t)[0];}
+function focusSel(){requestAnimationFrame(()=>document.querySelector(`[data-chart="${sel.chart}"][data-t="${sel.t}"]`)?.focus());}
+function nextTooth(ch,t){const o=SCFG(ch).order,j=o.indexOf(t);if(j<o.length-1){sel={chart:ch,t:o[j+1]};selS=firstEmptySurf(ch,o[j+1]);}}
+function surfCode(code){if(!sel||!SURFCH.includes(sel.chart))return;const ch=sel.chart,p=partOf(ch);if(p.lock)return;const t=sel.t;if(!selS||!surfOf(t).includes(selS))selS=surfOf(t)[0];
+  applySurf(p,t,selS,code,ch);
+  if(code!==""){const ks=surfOf(t);const i=ks.indexOf(selS);if(i<ks.length-1)selS=ks[i+1];else nextTooth(ch,t);}
+  touch(ch);focusSel();}
+function wholeCode(code){if(!sel||!SURFCH.includes(sel.chart))return;const ch=sel.chart,p=partOf(ch);if(p.lock)return;const t=sel.t;applyWhole(p,t,code);
+  if(!(ch==="clin"&&code==="5"))nextTooth(ch,t);
+  touch(ch);focusSel();}
+function setCode(ch,code){if(!sel||sel.chart!==ch)return;const p=partOf(ch);if(p.lock)return;
+  if(code==="")delete p.c[sel.t];else p.c[sel.t]=code;if(ch==="clin"&&code!=="5"&&p.u)delete p.u[sel.t];
+  if(SURFCH.includes(ch)&&p.s?.[sel.t]&&(code===""||wholeOf(ch,code)||deriveTooth(p.s[sel.t],sel.t,ch!=="clin")!==code))delete p.s[sel.t];
+  const order=ch==="clin"?T32:T28;const idx=order.indexOf(sel.t);
+  if(code!==""&&!(ch==="clin"&&code==="5")&&idx<order.length-1){let n=idx+1;if(ch==="arb"){const dis=disagree(cur);while(n<order.length&&!dis.includes(order[n]))n++;if(n>=order.length)n=idx;}sel={chart:ch,t:order[n]};}
+  touch(ch);requestAnimationFrame(()=>document.querySelector(`[data-chart="${ch}"][data-t="${sel.t}"]`)?.focus());}
+document.addEventListener("keydown",e=>{
+  if(!sel)return;const tg=e.target;if(tg.matches("input,select,textarea"))return;
+  const ch=sel.chart;const set=ch==="clin"?WHO:PH;
+  if(surfModeOf(ch)){const cfg=SCFG(ch);
+    if(cfg.S.some(([c])=>c===e.key)){e.preventDefault();surfCode(e.key);return;}
+    if(cfg.W.some(([c])=>c===e.key)){e.preventDefault();wholeCode(e.key);return;}
+    if(e.key==="ArrowUp"||e.key==="ArrowDown"){e.preventDefault();const ks=surfOf(sel.t);let i=ks.indexOf(selS)+(e.key==="ArrowDown"?1:-1);selS=ks[(i+ks.length)%ks.length];renderAll();focusSel();return;}
+    if(e.key==="Backspace"||e.key==="Delete"){e.preventDefault();const p=partOf(ch);if(wholeOf(ch,p.c[sel.t])){delete p.c[sel.t];touch(ch);}else surfCode("");return;}
+  }
+  if(/^\d$/.test(e.key)&&set.some(([c])=>c===e.key)){e.preventDefault();setCode(ch,e.key);}
+  else if(e.key==="Backspace"||e.key==="Delete"){e.preventDefault();setCode(ch,"");}
+  else if(e.key==="ArrowRight"||e.key==="ArrowLeft"){e.preventDefault();const order=ch==="clin"?T32:T28;let i=order.indexOf(sel.t)+(e.key==="ArrowRight"?1:-1);i=Math.max(0,Math.min(order.length-1,i));sel={chart:ch,t:order[i]};if(surfModeOf(ch))selS=firstEmptySurf(ch,order[i]);renderAll();
+    requestAnimationFrame(()=>document.querySelector(`[data-chart="${ch}"][data-t="${sel.t}"]`)?.focus());}
+  else if((e.key==="u"||e.key==="U")&&ch==="clin"&&cur.clin.c?.[sel.t]==="5"&&!cur.clin.lock){e.preventDefault();cur.clin.u=cur.clin.u||{};cur.clin.u[sel.t]=!cur.clin.u[sel.t];touch("clin");requestAnimationFrame(()=>document.querySelector(`[data-chart="clin"][data-t="${sel.t}"]`)?.focus());}
+  else if(e.key==="Escape"){sel=null;renderAll();}
+});
+document.addEventListener("input",e=>{const el=e.target;
+  if(el.dataset.m){cur.meta[el.dataset.m]=el.value;if(el.dataset.m==="tuoi"&&el.value){const a=+el.value;cur.meta.i_age=a>=18&&a<=25;}touchSoft("meta");if(["site","stt","tuoi"].includes(el.dataset.m))renderMa();return;}
+  if(el.dataset.ai&&el.type!=="checkbox"){cur.ai[el.dataset.ai]=el.value;touchSoft("ai");return;}
+  if(el.dataset.reason){cur.photo.views[el.dataset.reason]={...(cur.photo.views[el.dataset.reason]||{}),reason:el.value};touchSoft("photo");return;}
+  if(el.id==="readerId"){cur[role].reader=el.value;touchSoft(role);return;}
+  if(el.id==="search")renderList();
+});
+function touchSoft(p){if(cur.demo)return;dirty.add(p);renderSteps();renderBanner();}
+document.addEventListener("change",e=>{const el=e.target;
+  if(el.dataset.mc){cur.meta[el.dataset.mc]=el.checked;touch("meta");return;}
+  if(el.dataset.m==="site"){if(!cur.meta.stt)cur.meta.stt=String(nextStt(el.value));touch("meta");return;}
+  if(el.dataset.ai&&el.type==="checkbox"){cur.ai[el.dataset.ai]=el.checked;touch("ai");return;}
+  if(el.dataset.q){const v=cur.photo.views[el.dataset.q]||{};const q=[...(v.q||["","","",""])];q[+el.dataset.qi]=el.value;cur.photo.views[el.dataset.q]={...v,q};touch("photo");return;}
+  if(el.dataset.rt){cur.photo.views[el.dataset.rt]={...(cur.photo.views[el.dataset.rt]||{}),retakes:+el.value};touch("photo");return;}
+  if(el.name==="role"){role=el.value;sel=null;renderAll();return;}
+  if(el.id==="blind"){renderAll();return;}
+});
+$("#btnNextStt").onclick=()=>{if(!cur.meta.site){toast("Choose a site first.");return;}cur.meta.stt=String(nextStt(cur.meta.site));touch("meta");};
+$("#btnAiParse").onclick=()=>applyAi($("#aiPaste").value);
+$("#btnAiFile").onclick=()=>$("#aiFile").click();
+$("#aiFile").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(f)applyAi(await f.text());});
+function applyAi(text){const r=parseAi(text);const n=Object.keys(r.ok||{}).length;if(!n){toast("No teeth could be read. Check the tooth,code format.",4000);return;}
+  Object.assign(cur.ai.c,r.ok);touch("ai");toast(`Loaded ${n} teeth.`+(r.bad.length?` Skipped ${r.bad.length} lines with an invalid code or outside the 28 teeth: ${r.bad.slice(0,5).join(", ")}`:""),5000);}
+
+/* ---- photos ---- */
+let pickFor=null;
+function pickPhoto(k){pickFor=k;$("#photoFile").click();}
+$("#photoFile").addEventListener("change",e=>{const f=e.target.files[0];e.target.value="";if(f&&pickFor)setPhoto(pickFor,f);});
+function setPhoto(k,file){if(!file.type.startsWith("image/")){toast("This file is not an image.");return;}if(cur.demo){toast("The example record cannot take photos. Create a new record first.");return;}
+  if(pending[k]?.url)URL.revokeObjectURL(pending[k].url);pending[k]={blob:file,url:URL.createObjectURL(file)};
+  const v=cur.photo.views[k]||{};cur.photo.views[k]={...v,name:file.name,type:file.type,size:file.size,edit:null,prevAsset:v.asset||v.prevAsset||null};touch("photo");}
+document.addEventListener("dragover",e=>{const d=e.target.closest?.("[data-drop]");if(d){e.preventDefault();d.classList.add("over");}});
+document.addEventListener("dragleave",e=>{const d=e.target.closest?.("[data-drop]");if(d)d.classList.remove("over");});
+document.addEventListener("drop",e=>{const d=e.target.closest?.("[data-drop]");if(!d)return;e.preventDefault();d.classList.remove("over");if(cur.photo.lock)return;const f=e.dataTransfer.files[0];if(f)setPhoto(d.dataset.drop,f);});
+
+/* ================= SAVE / LOCK ================= */
+async function doLock(part){
+  if(!cur.id){toast("Save the study ID in step 1 before locking.");return;}
+  if(part==="clin"){const absent=T28.filter(t=>["4","5","8"].includes(cur.clin.c[t])).length;if(absent>8&&!await ask(`${absent} teeth absent, exceeding the exclusion limit. Lock anyway?`,"Lock anyway"))return;}
+  if(!await ask("Lock this part? After locking it cannot be edited unless it is unlocked with a reason.","Lock"))return;
+  cur[part].lock={at:nowISO()};dirty.add(part);await save();}
+async function save(){
+  if(cur.demo){toast("The example record cannot be saved.");return;}
+  const newId=buildId();
+  if(!newId){toast("Enter the site and sequence number in step 1 before saving.");showTab("ma");return;}
+  const oldId=cur.id;const did=docId(newId);
+  if(newId!==oldId&&store.meta.has(did)){toast(`ID ${newId} already has a record. Change the sequence number.`,4000);return;}
+  if(oldId&&newId!==oldId){if(!await ask(`Change ID from ${oldId} sang ${newId}? All parts of the record move to the new ID.`,"Change ID"))return;PARTS.forEach(p=>dirty.add(p));}
+  if(!oldId)dirty.add("meta");
+  cur.id=newId;
+  try{
+    busy("Saving…");
+    if(dirty.has("photo")){for(const {k} of VIEWS){const pnd=pending[k];if(!pnd)continue;const v=cur.photo.views[k];
+      if(mode==="cloud"){if(!assets)throw{message:"You do not have permission to upload photos to this page."};const up=await assets.upload(pnd.blob);if(v.prevAsset)cur.photo.removed=[...(cur.photo.removed||[]),v.prevAsset];cur.photo.views[k]={...v,asset:up.id,prevAsset:null};}
+      else cur.photo.views[k]={...v,blob:pnd.blob,local:true,prevAsset:null};
+      URL.revokeObjectURL(pnd.url);delete pending[k];}}
+    for(const p of [...dirty]){
+      const body=JSON.parse(JSON.stringify({...cur[p],id:newId,updatedAt:nowISO()},(k,v)=>k==="blob"||k==="url"||k==="removed"?undefined:v));
+      if(p==="meta")Object.assign(body,{site:cur.meta.site,stt:cur.meta.stt});
+      if(p==="photo"&&mode==="local")VIEWS.forEach(({k})=>{if(cur.photo.views[k]?.blob)body.views[k].blob=cur.photo.views[k].blob;});
+      if(mode==="cloud"){await db.collection(p).doc(did).set(body);}else store[p].set(did,body);
+      cur[p].updatedAt=body.updatedAt;}
+    if(oldId&&docId(oldId)!==did){for(const p of PARTS){if(mode==="cloud"){try{await db.collection(p).doc(docId(oldId)).delete();}catch{}}else store[p].delete(docId(oldId));}}
+    for(const a of (cur.photo.removed||[])){try{await assets?.delete(a);}catch{}}cur.photo.removed=[];
+    dirty.clear();busy();renderAll();toast(`Saved ${newId}.`);
+  }catch(err){busy();toast("Could not save: "+(err?.message||err?.code||"unknown error"),5000);}
+}
+$("#btnSave").onclick=save;$("#btnSave2").onclick=save;
+async function guard(){return !dirty.size||cur.demo||await ask("The open record has unsaved changes. Discard them?","Discard changes");}
+async function newRec(){if(!await guard())return;Object.keys(pending).forEach(k=>{URL.revokeObjectURL(pending[k].url);delete pending[k];});cur=blank();dirty.clear();sel=null;showTab("ma");}
+$("#btnNew").onclick=newRec;$("#btnNew2").onclick=newRec;$("#btnNewTop").onclick=newRec;
+$("#btnDemo").onclick=async()=>{if(!await guard())return;cur=demoRec();dirty.clear();showTab("sosanh");};
+async function openRec(did){if(!await guard())return;Object.keys(pending).forEach(k=>delete pending[k]);cur=getRec(did);dirty.clear();sel=null;showTab("ma");toast("Opening "+cur.id);}
+async function delRec(did){const r=getRec(did);if(!await ask(`Permanently delete record ${r.id}, all parts and photos?`,"Clear"))return;
+  try{for(const p of PARTS){if(mode==="cloud"){try{await db.collection(p).doc(did).delete();}catch{}}else store[p].delete(did);}
+    if(mode==="cloud")for(const {k} of VIEWS){const a=r.photo.views?.[k]?.asset;if(a){try{await assets?.delete(a);}catch{}}}
+    if(cur.id&&docId(cur.id)===did){cur=blank();dirty.clear();}renderAll();toast("Deleted "+r.id);}
+  catch(err){toast("Could not delete: "+(err?.message||err?.code),5000);}}
+$("#btnPrev").onclick=()=>{const i=STEPS.findIndex(s=>s.k===tab);if(i>0)showTab(STEPS[i-1].k);};
+$("#btnNext").onclick=()=>{const i=STEPS.findIndex(s=>s.k===tab);if(i>=0&&i<STEPS.length-1)showTab(STEPS[i+1].k);};
+
+/* ================= EXPORT ================= */
+async function saveFile(name,blob){
+  const standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone;
+  try{const f=new File([blob],name,{type:blob.type||"application/octet-stream"});
+    if(standalone&&navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:name});return true;}}
+  catch(e){if(e?.name==="AbortError")return false;}
+  const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),60000);return true;}
+const stamp=()=>{const d=new Date(),p=n=>String(n).padStart(2,"0");return`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;};
+const extOf=v=>{const m=(v?.name||"").match(/\.([a-z0-9]{2,5})$/i);return m?m[1].toLowerCase():({"image/png":"png","image/webp":"webp","image/heic":"heic"})[v?.type]||"jpg";};
+const photoName=(r,k)=>`${docId(r.id)}_${k}_${(+r.photo.views[k]?.retakes||0)+1}_${docId(r.meta.device||"D")}.${extOf(r.photo.views[k])}`;
+async function exportXlsx(){
+  if(!window.XLSX){toast("The Excel library could not be loaded. Check the connection and try again.",5000);return;}
+  const recs=allIds().map(getRec);if(!recs.length){toast("No records to export.");return;}
+  const H1=["ma","diem","stt","ngay","tuoi","gioi","nhom","nguoi_kham","nguoi_chup","thiet_bi","du_tieu_chuan",...INCL.map(x=>x[0]),...EXCL.map(x=>x[0]),
+    "che_do_nhap","c_DS","c_MS","c_FS","cDMFS","hDMFS","c_D","c_M","c_F","cDMFT","cDMFT32","h_M","hDMFT","cDMFT_U4","c_ma9","v_D","v_M","v_F","vDMFT","v_ma9","a_D","a_M","a_F","pDMFT","a_ma9","V_tru_C","A_tru_C","dMAE",
+    "doc_bat_dong","kappa_2_doc","che_do_doc1","d1_DMFS","che_do_doc2","d2_DMFS","anh_du","anh_dat","khong_dau_ra_anh","khong_dau_ra_ai","ai_phien_ban","ai_ma_bam","ai_thoi_diem",...VIEWS.flatMap(v=>[`q_${v.k}`,`chup_lai_${v.k}`,`anh_${v.k}`,`chinh_${v.k}`]),
+    "khoa_kham","khoa_anh","khoa_ai","khoa_doc1","khoa_doc2","khoa_dong_thuan","nhat_ky_mo_khoa"];
+  const rows=recs.map(r=>{const m=r.meta,age=ageOf(r);const C=idxWHO(r.clin.c,T28,age),C32=filled(r.clin.c,WIS)===4?idxWHO(r.clin.c,T32,age).T:"",H=idxH(r.clin.c);
+    const Vc=consensus(r),V=idxP(Vc),A=idxP(r.ai.c);const ps=photoState(r);const fin=vLocked(r)&&r.clin.lock&&r.ai.lock;
+    const kp=kappa(T28.filter(t=>r.r1.c?.[t]&&r.r2.c?.[t]).map(t=>[harmP(r.r1.c[t]),harmP(r.r2.c[t])]),["S","D","F","A","X"]);
+    const e=eligibility(m);const vOk=fin&&!ps.noOut&&!r.photo.noOutput,aOk=vOk&&!r.ai.noOutput;
+    const logs=PARTS.flatMap(p=>(r[p]?.log||[]).map(l=>`${p}@${l.at}: ${l.reason}`)).join(" | ");
+    return [r.id,m.site||"",+m.stt||"",m.ngay||"",+m.tuoi||"",m.gioi||"",m.nhom||"",m.examiner||"",m.photographer||"",m.device||"",e.s==="ok"?1:e.s==="no"?0:"",...INCL.map(([k])=>m[k]?1:0),...EXCL.map(([k])=>m[k]?1:0),
+      ...(()=>{const S=idxS(r.clin,age);return[r.clin.mode==="surf"?"mat":"rang",...(S.miss?["","","","",""]:[S.D,S.M,S.F,S.T,S.HT])];})(),
+      C.D,C.M,C.F,C.T,C32,H.M,H.T,C.D+idxU(r.clin.c,r.clin.u)+C.F,C.n9,V.D,V.M,V.F,V.T,V.n9,A.D,A.M,A.F,A.T,A.n9,
+      vOk?V.T-C.T:"",aOk?A.T-C.T:"",aOk?Math.abs(A.T-C.T)-Math.abs(V.T-C.T):"",disagree(r).length,isFinite(kp.k)?+kp.k.toFixed(3):"",...["r1","r2"].flatMap(k=>{const S=idxS(r[k],age,k);return[r[k].mode==="surf"?"mat":"rang",r[k].mode==="surf"&&!S.miss?S.T:""];}),ps.has,ps.pass,ps.noOut||r.photo.noOutput?1:0,r.ai.noOutput?1:0,r.ai.version||"",r.ai.hash||"",r.ai.runAt||"",
+      ...VIEWS.flatMap(({k})=>{const v=r.photo.views[k];return[viewRated(v)?v.q.map(Number).reduce((a,b)=>a+b,0):"",v?(+v.retakes||0):"",v&&(v.asset||v.blob||v.dataUrl)?photoName(r,k):"",editSummary(v?.edit)];}),
+      r.clin.lock?.at||"",r.photo.lock?.at||"",r.ai.lock?.at||"",r.r1.lock?.at||"",r.r2.lock?.at||"",r.arb.lock?.at||"",logs];});
+  const teeth=[["ma","rang","kham_WHO","co_U","mat_Nhai","mat_N","mat_T","mat_G","mat_X","vi_tri_sau","d1_Nhai","d1_N","d1_T","d1_G","d1_X","d2_Nhai","d2_N","d2_T","d2_G","d2_X","doc1","doc2","trong_tai","vDMFT_dong_thuan","AI","nhom_kham","nhom_V","nhom_A"]];
+  recs.forEach(r=>{const Vc=consensus(r);T32.forEach(t=>{const w=WIS.includes(t);const ss=r.clin.s?.[t]||{};teeth.push([r.id,t,r.clin.c[t]??"",r.clin.u?.[t]?1:0,...["Nhai","N","T","G","X"].map(k=>surfOf(t).includes(k)?(ss[k]??""):"x"),["1","2"].includes(r.clin.c[t])?({O:"nhai",P:"ben",S:"ngoai_trong","?":""})[locOf(r.clin,t)]:"",...["r1","r2"].flatMap(k=>["Nhai","N","T","G","X"].map(x=>w?"":surfOf(t).includes(x)?(r[k].s?.[t]?.[x]??""):"x")),w?"":r.r1.c[t]??"",w?"":r.r2.c[t]??"",w?"":r.arb.c[t]??"",w?"":Vc[t]??"",w?"":r.ai.c[t]??"",harmW(r.clin.c[t]),w?"":harmP(Vc[t]),w?"":harmP(r.ai.c[t])]);});});
+  const dict=[["Item","Explanation"],["cDMFT","D+M+F on 28 teeth, WHO 2013 codes; M = code 4 (code 5 added from age 30)"],["cDMFT32","As above, 32 teeth (only when all 4 third molars are coded)"],["hDMFT","M = all absent teeth (codes 4, 5, 8), 28 teeth: scale harmonised with pDMFT"],["cDMFT_U4","Sensitivity analysis: code 5 with U flag counted as code 4"],
+    ["vDMFT","Consensus of 2 readers + adjudicator, pDMFT codes, 28 teeth"],["pDMFT","pDMFT-AI output, 28 teeth"],["dMAE","|A−C| − |V−C| (H3)"],["q_*","Total quality score of the 4 criteria (0–8)"],["chinh_*","Edits applied to the photo (blank = original used). The original is unchanged; edited copies are in the da_chinh folder of the .zip"],["nhom_*","S sound · D decayed · F filled · A absent · X not counted"],["cDMFS","Decayed + filled surfaces + surfaces of teeth missing due to caries (posterior 5, anterior 4 surfaces), 28 teeth"],["hDMFS","As cDMFS but M includes all absent teeth (codes 4, 5, 8)"],["mat_*","Surface codes: 0 sound, 1 decayed, 2 filled with decay, 3 filled no decay, 6 sealant; x = anterior tooth has no occlusal surface"],["vi_tri_sau","Decayed tooth: nhai (occlusal), ben (proximal), ngoai_trong (buccal/lingual)"],["d1_*, d2_*","Surface codes by readers 1 and 2 on photos: 0 sound, 1 decayed, 2 filled with decay, 3 filled no decay, 9 not visible"],["d1_DMFS, d2_DMFS","DMFS of each reader (absent tooth code 4 counts 5 surfaces posterior, 4 anterior)"],
+    ...WHO.map(([c,l,d])=>["WHO "+c,l+(d?" · "+d:"")]),...PH.map(([c,l,d])=>["Photo "+c,l+(d?" · "+d:"")])];
+  const wb=XLSX.utils.book_new();const ws=XLSX.utils.aoa_to_sheet([H1,...rows]);ws["!cols"]=H1.map(h=>({wch:Math.max(7,Math.min(20,h.length+2))}));
+  XLSX.utils.book_append_sheet(wb,ws,"Theo_nguoi");XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(teeth),"Theo_rang");const w3=XLSX.utils.aoa_to_sheet(dict);w3["!cols"]=[{wch:16},{wch:80}];XLSX.utils.book_append_sheet(wb,w3,"Tu_dien");
+  const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
+  if(await saveFile(`VOSER-pDMFT_${stamp()}.xlsx`,new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})))toast(`Exported ${recs.length} records.`);}
+$("#btnXlsx").onclick=exportXlsx;
+async function blobOf(v){if(v?.blob)return v.blob;if(v?.dataUrl)return(await fetch(v.dataUrl)).blob();if(v?.asset){const r=await fetch("/_blob/"+v.asset);if(!r.ok)throw new Error("Could not load the photo");return r.blob();}return null;}
+$("#btnZip").onclick=async()=>{if(!window.JSZip){toast("The zip library could not be loaded.",5000);return;}const zip=new JSZip();let n=0;busy("Collecting photos…");
+  try{for(const did of allIds()){const r=getRec(did);for(const {k} of VIEWS){const v=r.photo.views[k];const b=await blobOf(v);if(b){zip.file(photoName(r,k),b);n++;
+        if(isEdited(v.edit)){const u=URL.createObjectURL(b);try{const img=await loadImg(u);const eb=await new Promise(res=>renderEdit(img,v.edit,100000).toBlob(res,"image/jpeg",.95));if(eb)zip.file("da_chinh/"+photoName(r,k).replace(/\.[a-z0-9]+$/i,"_chinh.jpg"),eb);}finally{URL.revokeObjectURL(u);}}}}}
+    if(!n){busy();toast("No saved photos yet.");return;}const out=await zip.generateAsync({type:"blob"});busy();if(await saveFile(`Anh_VOSER-pDMFT_${stamp()}.zip`,out))toast(`Compressed ${n} photos.`);}
+  catch(e){busy();toast("Could not create the zip file: "+(e?.message||e),5000);}};
+const toDataURL=b=>new Promise((res,rej)=>{const f=new FileReader();f.onload=()=>res(f.result);f.onerror=rej;f.readAsDataURL(b);});
+$("#btnBackup").onclick=async()=>{const ids=allIds();if(!ids.length){toast("No records to back up.");return;}busy("Backing up…");
+  try{const out=[];for(const did of ids){const o={did};for(const p of PARTS){const d=store[p].get(did);if(d)o[p]=JSON.parse(JSON.stringify(d,(k,v)=>k==="blob"?undefined:v));}
+      if(o.photo?.views)for(const {k} of VIEWS){const v=store.photo.get(did).views?.[k];const b=await blobOf(v).catch(()=>null);if(b)o.photo.views[k].dataUrl=await toDataURL(b);}out.push(o);}
+    busy();if(await saveFile(`SaoLuu_VOSER-pDMFT_${stamp()}.json`,new Blob([JSON.stringify({format:"voser-pdmft",version:1,records:out})],{type:"application/json"})))toast(`Backed up ${out.length} records.`);}
+  catch(e){busy();toast("Could not back up: "+(e?.message||e),5000);}};
+$("#btnRestore").onclick=()=>$("#restoreFile").click();
+$("#restoreFile").addEventListener("change",async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+  try{const data=JSON.parse(await f.text());if(data.format!=="voser-pdmft")throw new Error("Not a VOSER–pDMFT backup.");const list=data.records||[];
+    if(!await ask(`Load ${list.length} records from ${f.name}? Records with the same ID will be replaced.`,"Load"))return;busy("Loading…");
+    for(const o of list){for(const p of PARTS){const d=o[p];if(!d)continue;
+        if(p==="photo")for(const {k} of VIEWS){const v=d.views?.[k];if(!v?.dataUrl)continue;const b=await(await fetch(v.dataUrl)).blob();
+          if(mode==="cloud"&&assets){const up=await assets.upload(b);d.views[k]={...v,dataUrl:null,asset:up.id};}else d.views[k]={...v,dataUrl:null,blob:b,local:true};}
+        if(mode==="cloud")await db.collection(p).doc(o.did).set(d);else store[p].set(o.did,d);}}
+    busy();renderAll();toast(`Loaded ${list.length} records.`);}
+  catch(err){busy();toast("Could not read the backup: "+(err?.message||err),5000);}});
+
+/* ================= EXAMPLE RECORD ================= */
+function demoRec(){const r=blank();r.demo=true;r.id="EX-0000";
+  r.meta={site:"S1",stt:"0",ngay:new Date().toISOString().slice(0,10),tuoi:"22",gioi:"2",nhom:"SV",examiner:"E1",photographer:"P2",device:"D2",i_age:true,i_perm:true,i_consent:true,i_coop:true};
+  const base=Object.fromEntries(T32.map(t=>[t,"0"]));
+  const cl={c:{},u:{14:true},s:{},mode:"surf",lock:{at:nowISO()}};
+  T32.forEach(t=>surfOf(t).forEach(k=>applySurf(cl,t,k,"0")));
+  [[16,"Nhai","1"],[15,"G","1"],[26,"Nhai","3"],[37,"Nhai","3"],[37,"G","3"],[46,"Nhai","3"],[46,"X","1"]].forEach(([t,k,c])=>applySurf(cl,t,k,c));
+  [[36,"4"],[14,"5"],[18,"8"],[28,"8"],[48,"8"],[38,"5"]].forEach(([t,c])=>applyWhole(cl,t,c));cl.u={14:true};
+  r.clin=cl;
+  r.photo={views:Object.fromEntries(VIEWS.map(({k})=>[k,{q:["2","2",k==="MD"?"1":"2","2"],retakes:k==="MD"?1:0,reason:k==="MD"?"Saliva covers 36":""}])),lock:{at:nowISO()}};
+  const p28=Object.fromEntries(T28.map(t=>[t,"0"]));
+  const rdr=(name,marks,wh)=>{const q={c:{},s:{},mode:"surf",reader:name,lock:{at:nowISO()}};T28.forEach(t=>surfOf(t).forEach(k=>applySurf(q,t,k,"0","r1")));marks.forEach(([t,k,c])=>applySurf(q,t,k,c,"r1"));wh.forEach(([t,c])=>applyWhole(q,t,c));return q;};
+  r.r1=rdr("R1",[[16,"Nhai","1"],[26,"Nhai","3"],[37,"Nhai","3"],[46,"Nhai","1"],[15,"G","9"],[15,"X","9"],[25,"G","9"]],[[36,"4"],[14,"4"]]);
+  r.r2=rdr("R2",[[16,"Nhai","1"],[26,"Nhai","3"],[37,"Nhai","3"],[46,"Nhai","3"],[46,"X","1"],[15,"G","1"]],[[36,"4"],[14,"4"]]);
+  r.arb={c:{46:"2",15:"1"},lock:{at:nowISO()}};
+  r.ai={c:{...p28,16:"1",26:"3",36:"4",46:"3",37:"3",24:"1",14:"4",11:"9"},version:"pDMFT-AI (example)",runAt:"—",lock:{at:nowISO()}};
+  return r;}
+
+/* ================= SHARED STORAGE ================= */
+function setMode(m){mode=m;const c=$("#modeChip");
+  if(m==="cloud"){c.textContent="Synced";c.className="chip cloud";c.title="Records and photos are stored with the page; everyone with access sees them";$("#dsSub").textContent="Records and photos are stored with this page. Each part is saved separately, so the examiner, photographer, readers and AI engineer can enter data at the same time without overwriting each other.";}
+  else if(m==="device"){c.textContent="Saved on this device";c.className="chip cloud";c.title="Records and photos are kept in this device's storage, also offline";$("#dsSub").textContent="Records and photos are saved on this device as you go and stay after the app is closed. They are not shared between devices: export a Backup regularly (e.g. end of each day) and send it to the data manager.";}
+  else{c.textContent="This device only";c.className="chip";}renderBanner();}
+async function connect(){
+  try{idb=await idbOpen();for(const p of PARTS)store[p]=new PMap(p,await idbAll(p));setMode("device");
+    try{if(navigator.storage?.persist&&!(await navigator.storage.persisted()))await navigator.storage.persist();}catch{}
+    renderAll();return;}
+  catch(e){idb=null;}
+  const C=window.claude;if(!C||typeof C.use!=="function"){setMode("local");return;}
+  C.use("downloads").then(d=>{dl=d;}).catch(()=>{});
+  C.use("assets").then(a=>{assets=a;}).catch(()=>{});
+  try{const d=await C.use("db");if(!d){setMode("local");return;}db=d;setMode("cloud");
+    const timer=setTimeout(()=>toast("Shared data could not be loaded yet. Check the connection.",5000),10000);
+    PARTS.forEach(p=>db.collection(p).onSnapshot(snap=>{clearTimeout(timer);const m=new Map();snap.docs.forEach(doc=>{const x=doc.data();if(x)m.set(doc.id,x);});store[p]=m;
+        if(cur&&cur.id&&!cur.demo&&!dirty.has(p)){const x=m.get(docId(cur.id));if(x){cur[p]=JSON.parse(JSON.stringify(x));cur[p].c=cur[p].c||(p==="meta"||p==="photo"?undefined:{});if(p==="photo")cur.photo.views=cur.photo.views||{};if(p==="clin")cur.clin.u=cur.clin.u||{};}}
+        renderAll();},
+      err=>toast("Lost connection to shared data: "+(err?.message||err?.code),5000)));
+  }catch{setMode("local");}}
+window.addEventListener("beforeunload",e=>{if(dirty.size||(mode==="local"&&countRecords())){e.preventDefault();e.returnValue="";}});
+
+/* start-up: open a blank new record at step 1 */
+cur=blank();
+const h=(location.hash||"").slice(1);showTab([...STEPS.map(s=>s.k),"ds","hd"].includes(h)?h:"ma");
+connect();
+if("serviceWorker" in navigator&&location.protocol!=="file:")addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+
+</body>
+</html>

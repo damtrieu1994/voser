@@ -1,0 +1,16 @@
+{
+  "name": "VOSER–pDMFT",
+  "short_name": "VOSER",
+  "description": "Research data entry: WHO 2013 clinical exam (cDMFT), 5-view photos, dentist reading (vDMFT) and pDMFT-AI output.",
+  "start_url": "./index.html#ma",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FFFFFF",
+  "theme_color": "#1B2A4A",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
