@@ -1138,7 +1138,7 @@ function renderAgg(){
 function allIds(){const ids=new Set();PARTS.forEach(p=>store[p].forEach((_,k)=>ids.add(k)));return [...ids].sort((a,b)=>a.localeCompare(b,"vi",{numeric:true}));}
 function getRec(did){const r=blank();PARTS.forEach(p=>{const d=store[p].get(did);if(d)r[p]=JSON.parse(JSON.stringify(d));});
   r.meta=r.meta||{};r.id=store.meta.get(did)?.id||PARTS.map(p=>store[p].get(did)?.id).find(Boolean)||did;
-  ["clin","ai","r1","r2","arb"].forEach(p=>{r[p].c=r[p].c||{};});r.clin.u=r.clin.u||{};r.clin.s=r.clin.s||{};r.clin.mode=r.clin.mode||"tooth";["r1","r2"].forEach(k=>{r[k].s=r[k].s||{};r[k].mode=r[k].mode||"tooth";});r.photo.views=r.photo.views||{};return r;}
+  ["clin","ai","r1","r2","arb"].forEach(p=>{r[p].c=r[p].c||{};});r.clin.u=r.clin.u||{};r.clin.s=r.clin.s||{};r.clin.mode=r.clin.mode||"tooth";["r1","r2"].forEach(k=>{r[k].s=r[k].s||{};r[k].mode=r[k].mode||"tooth";});r.photo.views=r.photo.views||{};const sp=store.photo.get(did);if(sp?.views)Object.keys(sp.views).forEach(k=>{const b=sp.views[k]?.blob;if(b&&r.photo.views[k])r.photo.views[k].blob=b;});return r;}
 function renderList(){
   const q=($("#search").value||"").toLowerCase();const ids=allIds().filter(i=>!q||i.toLowerCase().includes(q));
   if(!ids.length){$("#list").innerHTML=`<div class="empty">Chưa có phiếu nào. Bấm <b>+ Phiếu mới</b>, nhập mã ở bước 1 rồi bấm <b>Lưu</b>. Muốn xem cách dùng, bấm <b>Xem phiếu ví dụ</b>.</div>`;return;}
@@ -1282,7 +1282,7 @@ async function save(){
     for(const p of [...dirty]){
       const body=JSON.parse(JSON.stringify({...cur[p],id:newId,updatedAt:nowISO()},(k,v)=>k==="blob"||k==="url"||k==="removed"?undefined:v));
       if(p==="meta")Object.assign(body,{site:cur.meta.site,stt:cur.meta.stt});
-      if(p==="photo"&&mode==="local")VIEWS.forEach(({k})=>{if(cur.photo.views[k]?.blob)body.views[k].blob=cur.photo.views[k].blob;});
+      if(p==="photo"&&mode!=="cloud")VIEWS.forEach(({k})=>{if(cur.photo.views[k]?.blob)body.views[k].blob=cur.photo.views[k].blob;});
       if(mode==="cloud"){await db.collection(p).doc(did).set(body);}else store[p].set(did,body);
       cur[p].updatedAt=body.updatedAt;}
     if(oldId&&docId(oldId)!==did){for(const p of PARTS){if(mode==="cloud"){try{await db.collection(p).doc(docId(oldId)).delete();}catch{}}else store[p].delete(docId(oldId));}}
