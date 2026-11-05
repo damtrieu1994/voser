@@ -289,6 +289,46 @@ details.ref summary{cursor:pointer;color:var(--accent);font-size:13px;font-weigh
 .drop,.vimg{position:relative}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 @media (max-width:520px){h1{font-size:20px} .brand small{display:none}}
+<style>
+/* ===== Simple mode: larger, cleaner ===== */
+body{font-size:17px}
+.brand small{display:none}
+.btn{padding:10px 16px;font-size:16px;min-height:44px;border-radius:10px}
+.btn.sm{padding:6px 12px;font-size:14px;min-height:36px}
+input,select,textarea{font-size:16px!important;min-height:44px}
+.fld>label{font-size:15px}
+.ck{font-size:16px;gap:10px}
+.ck input{width:22px;height:22px}
+.banner{font-size:15px}
+.step{padding:10px 14px}
+.step .t b{font-size:15px}
+.step .t span{font-size:12px}
+.step .n{width:28px;height:28px;font-size:14px}
+.chip{font-size:13px;padding:5px 11px}
+h1{font-size:clamp(22px,4vw,28px)}
+body.simple .lead:not(.keep),body.simple .note{display:none}
+body.simple #btnDemo{display:none}
+body[data-urole="doc"] .toggle,body[data-urole="doc"] #btnNewTop{display:none}
+.rolebtn{font-weight:600}
+.rolegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:18px}
+.rolecard{display:flex;flex-direction:column;gap:8px;text-align:left;padding:22px;border:2px solid var(--line);border-radius:16px;background:var(--surface);cursor:pointer;font:inherit;color:inherit}
+.rolecard b{font-size:22px}
+.rolecard span{color:var(--muted);font-size:16px}
+.rolecard em{font-style:normal;font-size:13px;color:var(--accent);font-weight:600}
+.rolecard.on,.rolecard:hover{border-color:var(--accent);background:var(--accent-soft)}
+.chonwrap{display:flex;flex-direction:column;gap:10px}
+.chonrow{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.chonrow.cur{border-color:var(--accent)}
+.chonid{font-weight:700;font-size:18px;min-width:90px}
+.chonst{flex:1;color:var(--muted);font-size:15px;min-width:200px}
+body.simple .toggle,body.simple #btnNew2{display:none}
+main .foot[hidden]{display:none!important}
+@media (max-width:600px){#modeChip{display:none}.rolebtn,.langbtn{padding:6px 10px;min-height:38px;font-size:14px}.bar .btn{padding:8px 12px}}
+.aigrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;align-items:end}
+.aigrid input{font-size:22px!important;font-weight:700;text-align:center}
+.aitot{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:12px;background:var(--accent-soft);padding:8px;min-height:72px}
+.aitot b{font-size:30px;line-height:1}.aitot span{font-size:13px;color:var(--accent);font-weight:600}
+@media (max-width:600px){.aigrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style>
 </head>
 <body>
@@ -300,7 +340,7 @@ details.ref summary{cursor:pointer;color:var(--accent);font-size:13px;font-weigh
    <span class="chip dirty" id="dirtyChip" hidden>Chưa lưu</span>
    <span class="sp"></span>
    <label class="toggle" title="Ẩn kết quả của phương pháp khác khi nhập liệu, theo quy trình che mù của đề cương"><input type="checkbox" id="blind" checked> Che mù</label>
-   <span class="chip" id="modeChip">Đang kết nối…</span><button type="button" class="btn" style="margin-left:8px;padding:4px 10px" onclick="switchLang()" title="Language / Ngôn ngữ">English</button>
+   <span class="chip" id="modeChip">Đang kết nối…</span><button type="button" class="btn langbtn" onclick="switchLang()" title="Language / Ngôn ngữ">English</button>
    <button class="btn" id="btnNewTop" type="button">+ Phiếu mới</button>
    <button class="btn pri" id="btnSave" type="button">Lưu</button>
   </div>
@@ -609,7 +649,7 @@ const VIEWS=[{k:"F",l:"Chính diện",en:"Frontal"},{k:"R",l:"Bên phải",en:"R
 const QCRIT=["Nét (focus, rung)","Ánh sáng, chói","Nước bọt, mờ gương","Độ phủ và góc"];
 const INCL=[["i_age","18–25 tuổi (từ sinh nhật 18 đến trước sinh nhật 26), sống tại Việt Nam"],["i_perm","Có răng vĩnh viễn"],["i_consent","Đồng ý tham gia bằng văn bản"],["i_coop","Há miệng và hợp tác đủ để khám và chụp 5 góc"]];
 const EXCL=[["e_ortho","Khí cụ chỉnh nha cố định đang hoạt động hoặc hàm giả tháo lắp (khí cụ duy trì dán thì không loại)"],["e_prim","Răng sữa tồn lưu hoặc răng thừa thấy được"],["e_miss","Vắng quá 8 răng trong 28 răng (không tính răng khôn)"],["e_acute","Đau cấp, cần xử trí cấp cứu ngay"],["e_tx","Được điều trị răng giữa lúc khám và lúc chụp ảnh"]];
-const STEPS=[{k:"ma",l:"Mã",s:"Sàng lọc"},{k:"kham",l:"Khám lâm sàng",s:"cDMFT"},{k:"anh",l:"Nhập ảnh",s:"5 góc"},{k:"ai",l:"Chẩn đoán AI",s:"pDMFT"},{k:"doc",l:"Đọc ảnh",s:"vDMFT"},{k:"sosanh",l:"So sánh",s:"3 chỉ số"}];
+const STEPS=[{k:"ma",l:"Mã",s:"Sàng lọc"},{k:"kham",l:"Khám lâm sàng",s:"cDMFT"},{k:"anh",l:"Nhập ảnh",s:"5 góc"},{k:"ai",l:"pDMFT",s:"Kết quả AI"},{k:"doc",l:"Đọc ảnh",s:"vDMFT"}];
 const PARTS=["meta","clin","photo","ai","r1","r2","arb"];
 /* mặt răng (theo VOSER): Nhai, N ngoài, T trong, G gần, X xa; răng trước không có mặt nhai */
 const SLAB={Nhai:"Mặt nhai",N:"Mặt ngoài",T:"Mặt trong",G:"Mặt gần",X:"Mặt xa"};
@@ -709,7 +749,7 @@ function vLocked(r){return !!r.arb?.lock;}
 function triple(r){if(!(r.clin?.lock&&r.ai?.lock&&vLocked(r)))return null;
   const age=ageOf(r);const C=idxWHO(r.clin.c,T28,age),H=idxH(r.clin.c),C32=filled(r.clin.c,WIS)===4?idxWHO(r.clin.c,T32,age):null;
   const no=photoState(r).noOut||r.photo?.noOutput;const aiNo=no||r.ai?.noOutput;
-  const Vc=consensus(r);const V=no?null:idxP(Vc),A=aiNo?null:idxP(r.ai.c);
+  const Vc=consensus(r);const V=no?null:idxP(Vc),A=aiNo?null:aiIdx(r);
   return{C,H,C32,V,A,Vc,no,aiNo,UM:idxU(r.clin.c,r.clin.u)};}
 
 /* ================= DỰNG GIAO DIỆN ================= */
@@ -723,7 +763,7 @@ function stepState(r){const o={};if(!r)return o;
   const e=eligibility(r.meta);o.ma=r.id&&e.s==="ok"?"lock":(r.id||e.s!=="none")?"part":"";
   o.kham=r.clin?.lock?"lock":filled(r.clin?.c,T32)?"part":"";
   o.anh=r.photo?.lock?"lock":photoState(r).has?"part":"";
-  o.ai=r.ai?.lock?"lock":filled(r.ai?.c,T28)||r.ai?.noOutput?"part":"";
+  o.ai=r.ai?.lock?"lock":(window.aiHas&&aiHas(r))||filled(r.ai?.c,T28)||r.ai?.noOutput?"part":"";
   o.doc=vLocked(r)?"lock":(filled(r.r1?.c,T28)||filled(r.r2?.c,T28))?"part":"";
   o.sosanh=triple(r)?"lock":"";return o;}
 function countRecords(){const ids=new Set();PARTS.forEach(p=>store[p].forEach((_,k)=>ids.add(k)));return ids.size;}
@@ -957,7 +997,7 @@ function renderCmp(){
     $("#cmpOne").innerHTML=`<div class="panel" style="text-align:center;padding:30px"><div style="font-size:30px">🔒</div><h3 style="margin-top:6px">Chưa mở được so sánh cho ${esc(r.id||"phiếu này")}</h3><p class="note" style="margin:6px auto">Còn chờ khóa: ${miss.join(", ")}. Mở bảng liên kết chỉ sau khi cả ba đầu ra đã khóa, để không ai điều chỉnh kết quả theo phép đo khác.</p></div>`;
   } else {
     const age=ageOf(r);const C=tr?.C||idxWHO(r.clin.c,T28,age),H=tr?.H||idxH(r.clin.c);const Vc=tr?.Vc||consensus(r);
-    const V=tr?tr.V:idxP(Vc),A=tr?tr.A:idxP(r.ai.c);
+    const V=tr?tr.V:idxP(Vc),A=tr?tr.A:aiIdx(r);
     const card=(lab,sub,x,col,ref)=>`<div class="mcard" style="--c:var(${col})"><div class="lab">${lab}</div><div class="big">${x?x.T:"—"}</div><div class="parts">${x?`D ${x.D} · M ${x.M} · F ${x.F}`:"Không có đầu ra"}</div><div class="note" style="margin:4px 0 0">${sub}</div>${ref&&x?`<div class="delta">So với khám: <b style="color:var(${col})">${sgn(x.T-C.T,0)}</b> răng · với hDMFT: <b>${sgn(x.T-H.T,0)}</b></div>`:""}</div>`;
     const dV=V?V.T-C.T:null,dA=A?A.T-C.T:null;const dd=V&&A?Math.abs(dA)-Math.abs(dV):null;
     const rows=[["Khám (C)",T=>harmW(r.clin.c?.[T]),T=>r.clin.c?.[T],kindW],["Đọc ảnh (V)",T=>harmP(Vc[T]),T=>Vc[T],kindP],["AI (A)",T=>harmP(r.ai.c?.[T]),T=>r.ai.c?.[T],kindP]];
@@ -1085,7 +1125,7 @@ function getRec(did){const r=blank();PARTS.forEach(p=>{const d=store[p].get(did)
 function renderList(){
   const q=($("#search").value||"").toLowerCase();const ids=allIds().filter(i=>!q||i.toLowerCase().includes(q));
   if(!ids.length){$("#list").innerHTML=`<div class="empty">Chưa có phiếu nào. Bấm <b>+ Phiếu mới</b>, nhập mã ở bước 1 rồi bấm <b>Lưu</b>. Muốn xem cách dùng, bấm <b>Xem phiếu ví dụ</b>.</div>`;return;}
-  $("#list").innerHTML=`<table class="tb"><thead><tr><th>Mã</th><th>Ngày</th><th>Tuổi</th><th>Tiến độ (6 bước)</th><th>Cập nhật</th><th></th></tr></thead><tbody>${ids.map(did=>{const r=getRec(did);const st=stepState(r);
+  $("#list").innerHTML=`<table class="tb"><thead><tr><th>Mã</th><th>Ngày</th><th>Tuổi</th><th>Tiến độ (5 bước)</th><th>Cập nhật</th><th></th></tr></thead><tbody>${ids.map(did=>{const r=getRec(did);const st=stepState(r);
     const up=PARTS.map(p=>r[p]?.updatedAt).filter(Boolean).sort().pop();
     return `<tr class="${cur?.id&&docId(cur.id)===did?"cur":""}"><td class="mono">${esc(r.id)}</td><td>${esc(r.meta.ngay||"")}</td><td class="num">${esc(r.meta.tuoi||"")}</td>
      <td><span class="dots" title="Mã · Khám · Ảnh · AI · Đọc ảnh · So sánh">${STEPS.map(s=>`<i class="${st[s.k]==="lock"?"l":st[s.k]==="part"?"p":""}"></i>`).join("")}</span></td>
@@ -1237,7 +1277,7 @@ $("#btnSave").onclick=save;$("#btnSave2").onclick=save;
 async function guard(){return !dirty.size||cur.demo||await ask("Phiếu đang mở có thay đổi chưa lưu. Bỏ các thay đổi này?","Bỏ thay đổi");}
 async function newRec(){if(!await guard())return;Object.keys(pending).forEach(k=>{URL.revokeObjectURL(pending[k].url);delete pending[k];});cur=blank();dirty.clear();sel=null;showTab("ma");}
 $("#btnNew").onclick=newRec;$("#btnNew2").onclick=newRec;$("#btnNewTop").onclick=newRec;
-$("#btnDemo").onclick=async()=>{if(!await guard())return;cur=demoRec();dirty.clear();showTab("sosanh");};
+$("#btnDemo").onclick=async()=>{if(!await guard())return;cur=demoRec();dirty.clear();showTab("ma");};
 async function openRec(did){if(!await guard())return;Object.keys(pending).forEach(k=>delete pending[k]);cur=getRec(did);dirty.clear();sel=null;showTab("ma");toast("Đang mở "+cur.id);}
 async function delRec(did){const r=getRec(did);if(!await ask(`Xoá vĩnh viễn phiếu ${r.id}, mọi phần và ảnh?`,"Xoá"))return;
   try{for(const p of PARTS){if(mode==="cloud"){try{await db.collection(p).doc(did).delete();}catch{}}else store[p].delete(did);}
@@ -1266,7 +1306,7 @@ async function exportXlsx(){
     "doc_bat_dong","kappa_2_doc","che_do_doc1","d1_DMFS","che_do_doc2","d2_DMFS","anh_du","anh_dat","khong_dau_ra_anh","khong_dau_ra_ai","ai_phien_ban","ai_ma_bam","ai_thoi_diem",...VIEWS.flatMap(v=>[`q_${v.k}`,`chup_lai_${v.k}`,`anh_${v.k}`,`chinh_${v.k}`]),
     "khoa_kham","khoa_anh","khoa_ai","khoa_doc1","khoa_doc2","khoa_dong_thuan","nhat_ky_mo_khoa"];
   const rows=recs.map(r=>{const m=r.meta,age=ageOf(r);const C=idxWHO(r.clin.c,T28,age),C32=filled(r.clin.c,WIS)===4?idxWHO(r.clin.c,T32,age).T:"",H=idxH(r.clin.c);
-    const Vc=consensus(r),V=idxP(Vc),A=idxP(r.ai.c);const ps=photoState(r);const fin=vLocked(r)&&r.clin.lock&&r.ai.lock;
+    const Vc=consensus(r),V=idxP(Vc),A=aiIdx(r);const ps=photoState(r);const fin=vLocked(r)&&r.clin.lock&&r.ai.lock;
     const kp=kappa(T28.filter(t=>r.r1.c?.[t]&&r.r2.c?.[t]).map(t=>[harmP(r.r1.c[t]),harmP(r.r2.c[t])]),["S","D","F","A","X"]);
     const e=eligibility(m);const vOk=fin&&!ps.noOut&&!r.photo.noOutput,aOk=vOk&&!r.ai.noOutput;
     const logs=PARTS.flatMap(p=>(r[p]?.log||[]).map(l=>`${p}@${l.at}: ${l.reason}`)).join(" | ");
@@ -1353,6 +1393,136 @@ window.addEventListener("beforeunload",e=>{if(dirty.size||(mode==="local"&&count
 cur=blank();
 const h=(location.hash||"").slice(1);showTab([...STEPS.map(s=>s.k),"ds","hd"].includes(h)?h:"ma");
 connect();
+</script>
+<script>
+/* ===== pDMFT section: record the AI result only (model runs outside the app) ===== */
+(function(){
+const VI=document.documentElement.lang==="vi";
+const TX=VI?{h:"pDMFT · kết quả AI",lead:"Mô hình không chạy trong app. Nhóm chạy pDMFT-AI gửi kết quả cho từng mã nghiên cứu; nhập số răng D, M, F ở đây rồi khóa.",
+  D:"D – răng sâu",M:"M – răng vắng",F:"F – răng trám",tot:"pDMFT",ver:"Phiên bản mô hình",verPh:"VD: pDMFT-AI v1.0, T = 0,85",no:"AI không cho kết quả cho phiếu này (lỗi chạy, ảnh không xử lý được)",
+  lab:"kết quả pDMFT",bad:"Mỗi ô là số nguyên 0–28 và D + M + F không quá 28.",need:"Nhập đủ D, M, F.",ok:"Đủ dữ liệu, có thể khóa.",noMsg:"Ghi nhận AI không cho kết quả.",verNeed:" Nên ghi phiên bản mô hình."}
+:{h:"pDMFT · AI result",lead:"The model does not run in the app. The team running pDMFT-AI sends a result for each study ID; enter the number of D, M and F teeth here, then lock.",
+  D:"D – decayed teeth",M:"M – absent teeth",F:"F – filled teeth",tot:"pDMFT",ver:"Model version",verPh:"e.g. pDMFT-AI v1.0, T = 0.85",no:"AI gave no result for this record (run error, photos not processable)",
+  lab:"pDMFT result",bad:"Each box must be a whole number 0–28 and D + M + F at most 28.",need:"Enter D, M and F.",ok:"Complete, ready to lock.",noMsg:"Recorded as no AI result.",verNeed:" Record the model version."};
+const sec=document.querySelector('section[data-panel="ai"]');
+sec.innerHTML=`<h1>${TX.h}</h1><p class="lead keep">${TX.lead}</p>
+<div class="panel aisimple">
+ <div class="aigrid">${["D","M","F"].map(k=>`<div class="fld"><label for="ais_${k}">${TX[k]}</label><input id="ais_${k}" data-aisum="${k}" type="number" inputmode="numeric" min="0" max="28" step="1"></div>`).join("")}
+  <div class="aitot"><b id="aiTot">–</b><span>${TX.tot}</span></div></div>
+ <div class="fld" style="margin-top:14px"><label for="ai_ver">${TX.ver}</label><input type="text" id="ai_ver" data-ai="version" placeholder="${TX.verPh}"></div>
+ <label class="ck" style="margin-top:12px"><input type="checkbox" id="ai_no" data-ai="noOutput"> ${TX.no}</label>
+</div>
+<div class="lockbar" id="aiLock"></div>`;
+const num=v=>v===""||v==null?null:Number(v);
+function sumOf(a){const s=a?.sum||{};const v=["D","M","F"].map(k=>num(s[k]));
+  if(v.some(x=>x==null))return{ok:false,empty:v.every(x=>x==null)};
+  if(v.some(x=>!Number.isInteger(x)||x<0||x>28)||v[0]+v[1]+v[2]>28)return{ok:false,bad:true};
+  return{ok:true,D:v[0],M:v[1],F:v[2],T:v[0]+v[1]+v[2]};}
+window.aiIdx=function(r){const s=sumOf(r.ai);if(s.ok)return{D:s.D,M:s.M,F:s.F,T:s.T,n9:""};return idxP(r.ai?.c);};
+window.aiHas=function(r){const s=r.ai?.sum||{};return["D","M","F"].some(k=>s[k]!==""&&s[k]!=null);};
+function paint(){const a=cur.ai;a.sum=a.sum||{};const lk=!!a.lock;
+  document.querySelectorAll("[data-aisum]").forEach(el=>{if(document.activeElement!==el)el.value=a.sum[el.dataset.aisum]??"";el.disabled=lk||!!a.noOutput;});
+  document.querySelectorAll('section[data-panel="ai"] [data-ai]').forEach(el=>{if(el.type==="checkbox")el.checked=!!a[el.dataset.ai];else if(document.activeElement!==el)el.value=a[el.dataset.ai]??"";el.disabled=lk;});
+  const s=sumOf(a);$("#aiTot").textContent=a.noOutput?"–":s.ok?s.T:"–";
+  const msg=a.noOutput?TX.noMsg:s.ok?TX.ok+(a.version?"":TX.verNeed):s.bad?TX.bad:TX.need;
+  $("#aiLock").innerHTML=lockHTML("ai",TX.lab,(s.ok||a.noOutput)&&!!cur.id,msg,a.lock);}
+window.renderAi=paint;
+document.addEventListener("input",e=>{const el=e.target;if(el.dataset?.ai&&el.closest?.('section[data-panel="ai"]')&&cur)setTimeout(paint);});
+document.addEventListener("input",e=>{const el=e.target;if(!el.dataset?.aisum||!cur||cur.ai.lock)return;cur.ai.sum=cur.ai.sum||{};
+  cur.ai.sum[el.dataset.aisum]=el.value;touchSoft("ai");paint();});
+})();
+
+/* ===== Simple mode: roles, fewer steps, bigger UI ===== */
+(function(){
+const VI=document.documentElement.lang==="vi";
+const TX=VI?{
+  who:"Bạn là ai?",whoSub:"Chọn vai trò để app chỉ hiện những bước bạn cần. Đổi lại bất cứ lúc nào bằng nút vai trò ở góc trên.",
+  kham:"Người khám",khamD:"Nhập mã, khám lâm sàng (cDMFT) và chụp 5 ảnh",
+  doc:"Nha sĩ đọc ảnh",docD:"Đọc ảnh mù (người đọc 1, 2 hoặc trọng tài) → vDMFT",
+  ql:"Quản lý dữ liệu",qlD:"Nhập kết quả AI (pDMFT), danh sách phiếu, sao lưu, xuất Excel",
+  chon:"Chọn phiếu",chonS:"ảnh đã khóa",chonH:"Chọn phiếu để đọc ảnh",
+  chonL:"Chỉ hiện các phiếu đã khóa ảnh. Bạn chỉ thấy mã và tiến độ đọc, không thấy kết quả khám hay AI.",
+  none:"Chưa có phiếu nào đã khóa ảnh trên máy này. Nhờ người quản lý gửi bản sao lưu rồi mở ở mục Sao lưu bên dưới.",
+  read:"Đọc",r1:"Đọc 1",r2:"Đọc 2",arb:"Trọng tài",backup:"Sao lưu kết quả đọc",openb:"Mở bản sao lưu",
+  roleBtn:"Vai trò",steps:"bước",lock:"đã khóa",part:"đang nhập",list:"Danh sách",listS:"phiếu",guide:"Hướng dẫn",guideS:"cách dùng"
+}:{
+  who:"Who are you?",whoSub:"Choose a role so the app shows only the steps you need. Change it any time with the role button at the top.",
+  kham:"Examiner",khamD:"Study ID, clinical exam (cDMFT) and the 5 photos",
+  doc:"Photo reader",docD:"Blinded photo reading (reader 1, 2 or adjudicator) → vDMFT",
+  ql:"Data manager",qlD:"Enter AI output (pDMFT), record list, backup, Excel export",
+  chon:"Choose record",chonS:"photos locked",chonH:"Choose a record to read",
+  chonL:"Only records with locked photos are shown. You see the study ID and reading progress only, not the exam or AI results.",
+  none:"No record with locked photos on this device yet. Ask the data manager for a backup and open it below.",
+  read:"Read",r1:"Reader 1",r2:"Reader 2",arb:"Adjudicator",backup:"Back up my readings",openb:"Open a backup",
+  roleBtn:"Role",steps:"steps",lock:"locked",part:"in progress",list:"Records",listS:"records",guide:"Guide",guideS:"how to use"
+};
+const ROLES={kham:{steps:["ma","kham","anh"],extra:["ds"]},doc:{steps:["chon","doc"],extra:[]},ql:{steps:["ma","kham","anh","ai","doc"],extra:["ds","hd"]}};
+let R=null;try{R=localStorage.getItem("voser-role");}catch(e){}
+if(!ROLES[R])R=null;
+const allowed=()=>R?[...ROLES[R].steps,...ROLES[R].extra,"vaitro"]:["vaitro"];
+const first=()=>R?ROLES[R].steps[0]:"vaitro";
+
+/* extra panels */
+$("#topBanner").insertAdjacentHTML("afterend",`<section data-panel="vaitro" hidden><h1>${TX.who}</h1><p class="lead keep">${TX.whoSub}</p><div class="rolegrid" id="roleGrid"></div></section>
+<section data-panel="chon" hidden><h1>${TX.chonH}</h1><p class="lead keep">${TX.chonL}</p><div id="chonList"></div>
+<div class="row" style="margin-top:18px"><button class="btn" type="button" id="rdBackup">${TX.backup}</button><button class="btn" type="button" id="rdOpen">${TX.openb}</button></div></section>`);
+$("#rdBackup").onclick=()=>$("#btnBackup")?.click();
+$("#rdOpen").onclick=()=>$("#btnRestore")?.click();
+
+/* role button in header */
+$("#modeChip").insertAdjacentHTML("afterend",`<button type="button" class="btn rolebtn" id="roleBtn"></button>`);
+$("#roleBtn").onclick=()=>showTab("vaitro");
+function paintRole(){
+  $("#roleBtn").textContent="👤 "+(R?TX[R]:TX.roleBtn);
+  document.body.classList.toggle("simple",R==="kham"||R==="doc");
+  document.body.dataset.urole=R||"";
+  if(R==="doc"){$("#blind").checked=true;}
+  $("#roleGrid").innerHTML=["kham","doc","ql"].map(k=>`<button type="button" class="rolecard ${R===k?"on":""}" data-role="${k}"><b>${TX[k]}</b><span>${TX[k+"D"]}</span><em>${ROLES[k].steps.length} ${TX.steps}</em></button>`).join("");
+}
+document.addEventListener("click",e=>{const b=e.target.closest(".rolecard[data-role]");if(!b)return;R=b.dataset.role;try{localStorage.setItem("voser-role",R);}catch(_){}
+  paintRole();showTab(first());});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-read]");if(!b)return;const [id,rl]=b.dataset.read.split("|");
+  window.__readRole=rl;openRec(id);},true);
+
+/* steps bar by role */
+const meta={chon:{l:TX.chon,s:TX.chonS}};
+window.renderSteps=function(){
+  const st=cur?stepState(cur):{};const list=R?ROLES[R].steps:[];
+  const S=k=>STEPS.find(s=>s.k===k)||{k,...meta[k]};
+  $("#steps").innerHTML=list.map((k,i)=>{const s=S(k);const z=st[k]||"";return `<button class="step st-${z}" data-go="${k}" ${tab===k?'aria-current="page"':""} type="button"><span class="n">${z==="lock"?"✓":i+1}</span><span class="t"><b>${s.l}</b><span>${s.s}${z==="lock"?" · "+TX.lock:z==="part"?" · "+TX.part:""}</span></span></button>`;}).join("")
+   +(R&&ROLES[R].extra.includes("ds")?`<button class="step list" data-go="ds" ${tab==="ds"?'aria-current="page"':""} type="button"><span class="n">≡</span><span class="t"><b>${TX.list}</b><span>${countRecords()} ${TX.listS}</span></span></button>`:"")
+   +(R&&ROLES[R].extra.includes("hd")?`<button class="step list" data-go="hd" ${tab==="hd"?'aria-current="page"':""} type="button"><span class="n">?</span><span class="t"><b>${TX.guide}</b><span>${TX.guideS}</span></span></button>`:"");
+};
+function renderChon(){
+  const ids=allIds().filter(id=>store.photo.get(id)?.lock);
+  if(!ids.length){$("#chonList").innerHTML=`<div class="empty">${TX.none}</div>`;return;}
+  const mark=(r,p)=>r[p]?.lock?"✓":(r[p]&&Object.keys(r[p].c||{}).length?"…":"–");
+  $("#chonList").innerHTML=`<div class="chonwrap">${ids.map(id=>{const r=getRec(id);const me=cur?.id&&docId(cur.id)===id;
+    return `<div class="chonrow ${me?"cur":""}"><span class="mono chonid">${esc(r.id||id)}</span>
+    <span class="chonst">${TX.r1} ${mark(r,"r1")} · ${TX.r2} ${mark(r,"r2")} · ${TX.arb} ${mark(r,"arb")}</span>
+    <span class="row" style="flex-wrap:nowrap">${["r1","r2","arb"].map(p=>`<button class="btn" type="button" data-read="${esc(id)}|${p}" ${r[p]?.lock?"disabled":""}>${TX[p]}</button>`).join("")}</span></div>`;}).join("")}</div>`;
+}
+const _renderAll=window.renderAll;
+window.renderAll=function(){
+  const ft=document.querySelector("main .foot");if(ft)ft.hidden=(tab==="vaitro"||tab==="chon");
+  if(tab==="vaitro"){paintRole();renderSteps();return;}
+  if(tab==="chon"){renderSteps();renderBanner?.();renderChon();return;}
+  _renderAll();
+  const L=R?ROLES[R].steps:[];const i=L.indexOf(tab);
+  $("#btnPrev").disabled=i<=0;$("#btnNext").disabled=i<0||i>=L.length-1;
+};
+const _showTab=window.showTab;
+window.showTab=function(k){if(!allowed().includes(k))k=first();_showTab(k);};
+$("#btnPrev").onclick=()=>{const L=R?ROLES[R].steps:[];const i=L.indexOf(tab);if(i>0)showTab(L[i-1]);};
+$("#btnNext").onclick=()=>{const L=R?ROLES[R].steps:[];const i=L.indexOf(tab);if(i>=0&&i<L.length-1)showTab(L[i+1]);};
+const _openRec=window.openRec;
+window.openRec=async function(did){await _openRec(did);
+  if(R==="doc"&&cur&&docId(cur.id)===did){if(window.__readRole){role=window.__readRole;window.__readRole=null;}showTab("doc");}};
+paintRole();
+showTab(R?(allowed().includes(tab)?tab:first()):"vaitro");
+})();
+
+
 if("serviceWorker" in navigator&&location.protocol!=="file:")addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 </script>
 
